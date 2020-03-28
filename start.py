@@ -1,5 +1,4 @@
 from collections import namedtuple
-import numpy as np
 import pandas as pd
 import my_module
 
@@ -15,10 +14,10 @@ df = pd.DataFrame({'A': [0, 1, 2, 3, 4],
                    'C': ['a', 'b', 'c--', 'd', 'e']})
 
 
-@app.route('/render_pandas_table', methods=("POST", "GET"))
-def render_pandas_table():
-    my_module.get_sorted_df(df, "B")
-    return df.to_html()
+@app.route('/get_recommendation/<user_id>', methods=("POST", "GET"))
+def get_recommendation(user_id):
+    recommendations = my_module.get_recommendation(int(user_id))
+    return recommendations.to_html(index=False)
 
 
 @app.route('/', methods=['GET'])
@@ -26,14 +25,14 @@ def hello_world():
     return render_template('index.html')
 
 
-@app.route('/main', methods=['GET'])
-def main():
-    return render_template('main.html', messages=messages)
-
-
-@app.route('/add_message', methods=['POST'])
-def add_message():
-    text = request.form['text']
-    tag = request.form['tag']
-    messages.append(Message(text,tag))
-    return redirect(url_for('main'))
+# @app.route('/main', methods=['GET'])
+# def main():
+#     return render_template('main.html', messages=messages)
+#
+#
+# @app.route('/add_message', methods=['POST'])
+# def add_message():
+#     text = request.form['text']
+#     tag = request.form['tag']
+#     messages.append(Message(text,tag))
+#     return redirect(url_for('main'))
