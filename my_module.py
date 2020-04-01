@@ -1,7 +1,11 @@
 import pickle
 import pandas as pd
+import numpy as np
 import time
 from itertools import product
+from sklearn.metrics import mean_squared_error, mean_absolute_error
+
+from DIPLOMv1 import SVD
 
 
 class RecommendationAlgoritm:
@@ -48,5 +52,25 @@ class RecommendationAlgoritm:
 
         return recommendations.head(20)
 
-    def _train_model(self):
-        return 0
+    def train_model(self):
+        test_user = 0
+        train_user = self.data_with_user.sample(frac=0.8)
+        val_user = self.data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)
+        test_user = self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())
+
+        lr, reg, factors = (0.02, 0.016, 64)
+        epochs = 10  # epochs = 50
+
+        svd = SVD(learning_rate=lr, regularization=reg, n_epochs=epochs, n_factors=factors,
+                  min_rating=0.5, max_rating=5)
+
+        svd.fit(X=train_user, X_val=val_user, early_stopping=False, shuffle=False)  # early_stopping=True
+
+        pred = svd.predict(test_user)
+        mae = mean_absolute_error(test_user["rating"], pred)
+        rmse = np.sqrt(mean_squared_error(test_user["rating"], pred))
+        print("Test MAE:  {:.2f}".format(mae))
+        print("Test RMSE: {:.2f}".format(rmse))
+        print('{} factors, {} lr, {} reg'.format(factors, lr, reg))
+
+        self.svd = svd

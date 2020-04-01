@@ -14,6 +14,10 @@ def get_recommendation(user_id):
     recommendations = rec_alg.get_recommendation(user_id)
     return render_template('main.html',  tables=[recommendations.to_html(classes='data', index=False)],
                            titles=recommendations.columns.values)
+@app.route('/train', methods=["POST"])
+def train_model():
+    global rec_alg
+    rec_alg.train_model()
 
 # if __name__ == '__main__':
 #     app.run()
