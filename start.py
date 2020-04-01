@@ -1,11 +1,13 @@
 from my_module import RecommendationAlgoritm
 
 from flask import Flask, render_template, current_app
+from multiprocessing import Process
 
 
 import random
 import threading
 import time
+import psutil
 
 
 app = Flask(__name__, static_url_path='',
