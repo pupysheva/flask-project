@@ -12,4 +12,4 @@ env.bak/
 venv.bak/
 
 .idea
-resources/ml-20m
+*.zip
