@@ -35,7 +35,7 @@ class RecommendationAlgoritm:
         recommendations['prediction'] = pred_train
 
         sorted_user_predictions = recommendations.sort_values(by='prediction', ascending=False)
-        print(sorted_user_predictions.head(10))
+        # print(sorted_user_predictions.head(10))
 
         user_ratings = self.data_with_user[self.data_with_user.u_id == user_id[0]]
         user_ratings.columns = ['u_id', 'i_id', 'rating']
