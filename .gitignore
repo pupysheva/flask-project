@@ -14,3 +14,4 @@ venv.bak/
 .idea
 *.zip
 *.pkl
+thread_*
