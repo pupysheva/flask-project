@@ -54,7 +54,7 @@ def index():
     exporting_threads[thread_id] = ExportingThread()
     exporting_threads[thread_id].start()
 
-    return 'task id: #%s' % thread_id
+    return '%s' % thread_id
 
 
 @app.route('/progress/<int:thread_id>')
