@@ -12,32 +12,6 @@ app = Flask(__name__)
 
 rec_alg = RecommendationAlgoritm()
 
-def train(this):
-    class Progress(keras.callbacks.Callback):
-        def on_batch_end(self, batch, logs={}):
-            print('self:', self)
-            print('batch:', batch)
-            print('logs:', logs)
-    
-    lr, reg, factors = (0.02, 0.016, 64)
-    epochs = 10 
-
-    this.progress = 25
-    svd = SVD(learning_rate=lr, regularization=reg, n_epochs=epochs, n_factors=factors,
-              min_rating=0.5, max_rating=5)
-    
-    this.progress = 50
-    svd.fit(X=train_user, X_val=val_user, early_stopping=False, shuffle=False, callbacks=[Progress()])#early_stopping=True
-
-    this.progress = 75
-    pred = svd.predict(test_user)
-    mae = mean_absolute_error(test_user["rating"], pred)
-    rmse = np.sqrt(mean_squared_error(test_user["rating"], pred))
-    print("Test MAE:  {:.2f}".format(mae))
-    print("Test RMSE: {:.2f}".format(rmse))
-    print('{} factors, {} lr, {} reg'.format(factors, lr, reg))
-    this.progress = 100
-
 @app.route('/get_recommendation/<int:user_id>', methods=["GET"])
 def get_recommendation(user_id):
     global rec_alg
@@ -45,13 +19,10 @@ def get_recommendation(user_id):
     return render_template('main.html',  tables=[recommendations.to_html(classes='data', index=False)],
                            titles=recommendations.columns.values)
 
-# if __name__ == '__main__':
-#     app.run()
-#     print("!!!!!!!!!!!!!!!!!!!!!!!!!!1",  current_app.name)
-
-#@app.route('/get_recommendation/<int:user_id>/load', methods=["GET"])
-#def get_recommendation(user_id):
-
+@app.route('/train', methods=["POST"])
+def trainUrl():
+    global rec_alg
+    return get_start_thread(lambda progress: rec_alg.train_model(progress))
 
 class ExportingThread(threading.Thread):
     def __init__(self):
@@ -84,9 +55,6 @@ def get_start_thread(callback_thread):
 
     return str(thread_id)
 
-@app.route('/train')
-def trainUrl():
-    return get_start_thread(train)
 
 @app.route('/progress/<int:thread_id>')
 def progress(thread_id):
