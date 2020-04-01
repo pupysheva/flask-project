@@ -20,11 +20,11 @@ def lowpriority():
 
         pid = win32api.GetCurrentProcessId()
         handle = win32api.OpenProcess(win32con.PROCESS_ALL_ACCESS, True, pid)
-        win32process.SetPriorityClass(handle, win32process.IDLE_PRIORITY_CLASS)
+        win32process.SetPriorityClass(handle, win32process.BELOW_NORMAL_PRIORITY_CLASS)
     else:
         import os
 
-        os.nice(19)
+        os.nice(15)
 
 class ProgressInFile:
     def __init__(self, id_thread):

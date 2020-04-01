@@ -42,7 +42,7 @@ def progress(thread_id):
     if os.path.exists(filename):
         with open(filename, 'rb+') as f:
             data = str(struct.unpack('f', f.read()))
-        os.reamove(filename)
+        os.remove(filename)
     else:
         data = 0
     return str(data)
