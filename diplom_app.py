@@ -1,4 +1,4 @@
-from my_module import RecommendationAlgoritm
+from recom_online_alg import RecommendationAlgoritm
 
 from flask import Flask, render_template, current_app
 
