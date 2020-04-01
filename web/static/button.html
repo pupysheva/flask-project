@@ -9,14 +9,7 @@
 </head>
 <body>
 <h1>Hello, buttoner</h1>
-<script>
-  function countRabbits() {
-    for(let i=1; i<=3; i++) {
-      alert("Кролик номер " + i);
-    }
-  }
-</script>
-<input type="button" onclick="check_progress('/train')" value="Считать кроликов!">
+<input type="button" onclick="check_progress(`train`, $.post)" value="Обучить">
 <div id="myProgress">
   <div id="myBar"></div>
 </div>

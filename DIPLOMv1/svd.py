@@ -1,5 +1,6 @@
 import numpy as np
 import time
+from typing import Callable
 
 from .fast_methods import _compute_val_metrics
 from .fast_methods import _initialization
@@ -64,7 +65,7 @@ class SVD():
 
         return X
 
-    def _sgd(self, X, X_val):
+    def _sgd(self, X, X_val, progress):
         """Алгоритм SGD
         Args:
             X (numpy array): обучающий набор, первый столбец должен содержать индексы пользователей, 
@@ -103,17 +104,19 @@ class SVD():
 
                     if self._early_stopping(list_val_rmse):
                         break
-
             else:
                 self._on_epoch_end(start)
+            progress(float(epoch_ix) / self.n_epochs)
+            time.sleep(0.001)
 
         self.pu = pu
         self.qi = qi
         self.bu = bu
         self.bi = bi
+        progress(1)
 
     @timer(text='\nTraining took ')
-    def fit(self, X, X_val=None, early_stopping=False, shuffle=False):
+    def fit(self, X, X_val=None, early_stopping=False, shuffle=False, progress=lambda p: None):
         """Настройка параметров модели
         Args:
             X (pandas DataFrame): обучающий набор, должен иметь столбец `u_id` для идентификатора пользователя,
@@ -121,19 +124,24 @@ class SVD():
             X_val (pandas DataFrame, defaults to `None`): валидационный набор данных
             early_stopping (boolean): стоит ли прекратить обучение на основе вычисления ошибок на валидационной выборке
 	    shuffle (boolean): стоит ли перемешивать данные перед каждой эпохой.
+        progress (Callable[[float], None]): функция получения статуса прогресса от 0 до 1
         Returns:
             self (SVD object): обученная модель
         """
+        progress(0.01)
         self.early_stopping = early_stopping
         self.shuffle = shuffle
         print('Preprocessing data...\n')
         X = self._preprocess_data(X)
+        progress(0.50)
 
         if X_val is not None:
             X_val = self._preprocess_data(X_val, train=False)
 
         self.global_mean = np.mean(X[:, 2])
-        self._sgd(X, X_val)
+        progress(0.75)
+        self._sgd(X, X_val, lambda p: progress(p * 0.25 + 0.75))
+        progress(1)
 
         return self
 

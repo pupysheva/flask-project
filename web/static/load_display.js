@@ -1,14 +1,14 @@
-function check_progress(url) {
+function check_progress(url, method = $.get) {
     let progress_bar_dom = document.getElementById("myBar");
-    $.get(url, function(task) {
-        check_progress_args(task, (percent) => { progress_bar_dom.style.width = percent + "%" })
+    method(url, function(task) {
+        check_progress_args(task, (percent) => { progress_bar_dom.style.width = (percent * 100) + "%" })
     })
     function check_progress_args(task_id, progress_bar_callback) {
         function worker() {
             $.get('progress/' + task_id, function(progress) {
                 progress_bar_callback(progress)
-                if (progress < 100) {
-                    setTimeout(worker, 1000)
+                if (progress < 1) {
+                    setTimeout(worker, 199)
                 }
             })
         }

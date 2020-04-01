@@ -8,9 +8,13 @@ import threading
 import time
 
 
-app = Flask(__name__)
+app = Flask(__name__, static_url_path='',
+            static_folder='./web/static',
+            template_folder='./web/templates')
+app.debug = True
 
 rec_alg = RecommendationAlgoritm()
+
 
 @app.route('/get_recommendation/<int:user_id>', methods=["GET"])
 def get_recommendation(user_id):
@@ -19,31 +23,34 @@ def get_recommendation(user_id):
     return render_template('main.html',  tables=[recommendations.to_html(classes='data', index=False)],
                            titles=recommendations.columns.values)
 
+
 @app.route('/train', methods=["POST"])
-def trainUrl():
+def train_model():
     global rec_alg
     return get_start_thread(lambda progress: rec_alg.train_model(progress))
+
 
 class ExportingThread(threading.Thread):
     def __init__(self):
         self.progress = 0
         super().__init__()
-    
+
     def set_callback_thread(self, callback_thread):
         self.callback_thread = callback_thread
     
+    def set_progress(self, p: float):
+        print("%s%%" % (p * 100))
+        self.progress = p
+
     def run(self):
         try:
             self.callback_thread(self)
         finally:
-            self.progress = 100
+            self.progress = 1
 
 
 exporting_threads = {}
-app = Flask(__name__, static_url_path='', 
-            static_folder='web/static',
-            template_folder='web/templates')
-app.debug = True
+
 
 def get_start_thread(callback_thread):
     global exporting_threads
