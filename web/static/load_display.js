@@ -1,6 +1,6 @@
-function check_progress() {
+function check_progress(url) {
     let progress_bar_dom = document.getElementById("myBar");
-    $.get('/', function(task) {
+    $.get(url, function(task) {
         check_progress_args(task, (percent) => { progress_bar_dom.style.width = percent + "%" })
     })
     function check_progress_args(task_id, progress_bar_callback) {
