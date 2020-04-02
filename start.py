@@ -39,11 +39,10 @@ def train_model():
         q = Queue()
         p = Process(target=my_module_interface.train_model, args=(q, thread_id))
         p.start()
-        p.join()
-        print(time.time(), "train_model: Get new rec_alg:", q)
-        if len(q) > 0:
+        for alg in q:
+            print(time.time(), "train_model: Get new rec_alg:", q)
             global rec_alg
-            rec_alg = q.get()
+            rec_alg = alg
             print(time.time(), "train_model: Updated.")
         else:
             print(time.time(), "train_model: Error! Queue is empty")
