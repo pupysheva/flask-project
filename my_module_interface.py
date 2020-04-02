@@ -1,5 +1,9 @@
 from my_module import RecommendationAlgoritm
+from multiprocessing import Queue
 import struct
+import tempfile
+
+tmppath = '{}/{}'.format(tempfile.gettempdir(), 'flask-project')
 
 def lowpriority():
     """ Set the priority of the process to below-normal."""
@@ -29,7 +33,7 @@ def lowpriority():
 class ProgressInFile:
     def __init__(self, id_thread):
         self._progress = 0
-        self.f = open('thread_' + str(id_thread), 'wb')
+        self.f = open(tmppath + '/thread_' + str(id_thread), 'wb')
     
     def set_progress(self, p: float):
         self.f.seek(0)
@@ -41,12 +45,12 @@ class ProgressInFile:
         return self
 
     def __exit__(self, exc_type, exc_val, exc_tb):
-        self.f.close();
+        self.f.close()
 
-def train_model(id_thread):
+def train_model(q: Queue, id_thread: int):
     lowpriority()
     ra = RecommendationAlgoritm()
     with ProgressInFile(id_thread) as f:
         ra.train_model(f)
-    return ra
-    
+    q.put(ra)
+

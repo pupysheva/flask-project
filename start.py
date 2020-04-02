@@ -2,12 +2,13 @@ from my_module import RecommendationAlgoritm
 import my_module_interface
 
 from flask import Flask, render_template, current_app
-from multiprocessing import Process
+from multiprocessing import Process, Queue
 import subprocess
 
 
 import random
 import struct
+import tempfile
 import threading
 import time
 import os
@@ -17,6 +18,10 @@ app = Flask(__name__, static_url_path='',
             static_folder='./web/static',
             template_folder='./web/templates')
 app.debug = True
+
+tmppath = '{}/{}'.format(tempfile.gettempdir(), 'flask-project')
+if not os.path.exists(tmppath):
+    os.mkdir(tmppath)
 
 rec_alg = RecommendationAlgoritm()
 
@@ -28,17 +33,24 @@ def get_recommendation(user_id):
     return render_template('main.html',  tables=[recommendations.to_html(classes='data', index=False)],
                            titles=recommendations.columns.values)
 
-
 @app.route('/train', methods=["POST"])
 def train_model():
+    def t():
+        q = Queue()
+        p = Process(target=my_module_interface.train_model, args=(q, thread_id))
+        p.start()
+        p.join()
+        if len(q) > 0:
+            global rec_alg
+            rec_alg = q.get()
     thread_id = random.randint(0, 100000)
-    p = Process(target=my_module_interface.train_model, args=(thread_id,))
-    p.start()
+    t = threading.Thread(target=t, args=())
+    t.start()
     return str(thread_id)
 
 @app.route('/progress/<int:thread_id>')
 def progress(thread_id):
-    filename = 'thread_' + str(thread_id)
+    filename = tmppath + '/thread_' + str(thread_id)
     if os.path.exists(filename):
         with open(filename, 'rb+') as f:
             data = str(struct.unpack('f', f.read()))
