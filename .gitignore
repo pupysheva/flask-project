@@ -14,4 +14,4 @@ venv.bak/
 .idea
 *.zip
 *.pkl
-thread_*
+ml-20m/*

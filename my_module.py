@@ -5,6 +5,7 @@ import time
 from datetime import datetime
 from itertools import product
 from sklearn.metrics import mean_squared_error, mean_absolute_error
+from pkl_generator import generate_if_need
 
 from DIPLOMv1 import SVD
 
@@ -12,6 +13,8 @@ from DIPLOMv1 import SVD
 class RecommendationAlgoritm:
     def __init__(self):
         now = time.time()
+
+        generate_if_need()
 
         with open('resources/ml-20m/model_svd.pkl', 'rb') as f:
             self.svd = pickle.load(f)
