@@ -69,8 +69,10 @@ class RecommendationAlgoritm:
 
         test_user = 0
         train_user = self.data_with_user.sample(frac=0.8)
+        thread.set_progress(0.09)
         print(datetime.now(), 'self.data_with_user.sample(frac=0.8)')
         val_user = self.data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)
+        thread.set_progress(0.19)
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)')
         test_user = self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())')
