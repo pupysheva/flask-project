@@ -40,9 +40,13 @@ def train_model():
         p = Process(target=my_module_interface.train_model, args=(q, thread_id))
         p.start()
         p.join()
+        print(time.time(), "train_model: Get new rec_alg:", q)
         if len(q) > 0:
             global rec_alg
             rec_alg = q.get()
+            print(time.time(), "train_model: Updated.")
+        else:
+            print(time.time(), "train_model: Error! Queue is empty")
     thread_id = random.randint(0, 100000)
     t = threading.Thread(target=t, args=())
     t.start()
