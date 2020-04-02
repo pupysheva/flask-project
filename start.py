@@ -36,16 +36,13 @@ def get_recommendation(user_id):
 @app.route('/train', methods=["POST"])
 def train_model():
     def t():
+        print(time.time(), "train_model.t started")
         q = Queue()
         p = Process(target=my_module_interface.train_model, args=(q, thread_id))
         p.start()
-        for alg in q:
-            print(time.time(), "train_model: Get new rec_alg:", q)
-            global rec_alg
-            rec_alg = alg
-            print(time.time(), "train_model: Updated.")
-        else:
-            print(time.time(), "train_model: Error! Queue is empty")
+        global rec_alg
+        rec_alg = q.get()
+        print(time.time(), "train_model: Updated.")
     thread_id = random.randint(0, 100000)
     t = threading.Thread(target=t, args=())
     t.start()
