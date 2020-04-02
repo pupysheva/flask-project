@@ -67,4 +67,6 @@ def progress(thread_id):
 
 
 if __name__ == '__main__':
+    from priority import hightpriority
+    hightpriority()
     app.run()
