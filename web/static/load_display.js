@@ -1,7 +1,15 @@
 function check_progress(url, method = $.get) {
     let progress_bar_dom = document.getElementById("myBar");
     method(url, function(task) {
-        check_progress_args(task, (percent) => { progress_bar_dom.style.width = (percent * 100) + "%" })
+        percent_cache = 0.0
+        check_progress_args(task, (percent) =>
+        {
+            if (percent != percent_cache)
+            {
+                progress_bar_dom.style.width = (percent * 100) + "%"
+                percent_cache = percent
+            }
+        })
     })
     function check_progress_args(task_id, progress_bar_callback) {
         function worker() {
