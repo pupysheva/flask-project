@@ -164,7 +164,7 @@ def generate_if_need(path='./resources', need_autoremove=True):
     if os.path.exists(svd_filename) and os.path.exists(data_with_user_filename) and os.path.exists(movies_filename):
         return
     else:
-        os.makedirs(path, exist_ok=True)
+        os.makedirs('/'.join(path, 'ml-%s' % variant), exist_ok=True)
         creator(svd_filename, data_with_user_filename,
                 movies_filename, variant)
         if need_autoremove:
