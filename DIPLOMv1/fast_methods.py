@@ -33,7 +33,7 @@ def _initialization(n_user, n_item, n_factors):
 
 @njit
 def _run_epoch(X, pu, qi, bu, bi, global_mean, n_factors, lr, reg):
-    """Runs an epoch, updating model weights (pu, qi, bu, bi).
+    """Запускает эпоху, обновляя вес модели (pu, qi, bu, bi).
     Args:
         X (numpy array): тренировочное множество
         pu (numpy array): матрица признаков пользователей
@@ -53,7 +53,7 @@ def _run_epoch(X, pu, qi, bu, bi, global_mean, n_factors, lr, reg):
     for i in range(X.shape[0]):
         user, item, rating = int(X[i, 0]), int(X[i, 1]), X[i, 2]
 
-        # Predict current rating
+        # Предсказание текущей оценки
         pred = global_mean + bu[user] + bi[item]
 
         for factor in range(n_factors):
@@ -61,11 +61,11 @@ def _run_epoch(X, pu, qi, bu, bi, global_mean, n_factors, lr, reg):
 
         err = rating - pred
 
-        # Update biases
+        # Обновление отклонений
         bu[user] += lr * (err - reg * bu[user])
         bi[item] += lr * (err - reg * bi[item])
 
-        # Update latent factors
+        # Обновление матриц пользователей и фильмов
         for factor in range(n_factors):
             puf = pu[user, factor]
             qif = qi[item, factor]
@@ -78,7 +78,7 @@ def _run_epoch(X, pu, qi, bu, bi, global_mean, n_factors, lr, reg):
 
 @njit
 def _compute_val_metrics(X_val, pu, qi, bu, bi, global_mean, n_factors):
-    """Computes validation metrics (loss, rmse, and mae).
+    """Вычисляет метрики проверки (ошибка, rmse и mae).
     Args:
         X_val (numpy array): валидационный набор данных
         pu (numpy array): матрица признаков пользователей
