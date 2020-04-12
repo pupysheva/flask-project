@@ -48,14 +48,14 @@ class RecommendationAlgoritm:
         pred_train = self.svd.predict(recommendations)
         recommendations['prediction'] = pred_train
 
-        sorted_user_predictions = recommendations.sort_values(by='prediction', ascending=False)
+        # sorted_user_predictions = recommendations.sort_values(by='prediction', ascending=False)
         # print(sorted_user_predictions.head(10))
 
         user_ratings = self.data_with_user[self.data_with_user.u_id == user_id[0]]
         user_ratings.columns = ['u_id', 'i_id', 'rating']
         # Топ 20 фильмов для рекомендации
         recommendations = self.movies_df[~self.movies_df['i_id'].isin(user_ratings['i_id'])]. \
-            merge(pd.DataFrame(sorted_user_predictions).reset_index(drop=True), how='inner', left_on='i_id',
+            merge(pd.DataFrame(recommendations).reset_index(drop=True), how='inner', left_on='i_id',
                   right_on='i_id'). \
             sort_values(by='prediction', ascending=False)
         print('\nВремя алгоритма', time.time() - now)

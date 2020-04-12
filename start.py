@@ -3,7 +3,6 @@ import my_module_interface
 
 from flask import Flask, render_template, current_app
 from multiprocessing import Process, Queue
-import subprocess
 
 
 import random
@@ -17,13 +16,13 @@ import os
 app = Flask(__name__, static_url_path='',
             static_folder='./web/static',
             template_folder='./web/templates')
-app.debug = True
+app.debug = False
 
 tmppath = '{}/{}'.format(tempfile.gettempdir(), 'flask-project')
 if not os.path.exists(tmppath):
     os.mkdir(tmppath)
 
-rec_alg = RecommendationAlgoritm()
+rec_alg = None
 
 
 @app.route('/get_recommendation/<int:user_id>', methods=["GET"])
@@ -35,7 +34,7 @@ def get_recommendation(user_id):
 
 @app.route('/train', methods=["POST"])
 def train_model():
-    def t():
+    def thf():
         print(time.time(), "train_model.t started")
         q = Queue()
         p = Process(target=my_module_interface.train_model, args=(q, thread_id))
@@ -44,8 +43,8 @@ def train_model():
         rec_alg = q.get()
         print(time.time(), "train_model: Updated.")
     thread_id = random.randint(0, 100000)
-    t = threading.Thread(target=t, args=())
-    t.start()
+    th = threading.Thread(target=thf, args=())
+    th.start()
     return str(thread_id)
 
 @app.route('/progress/<int:thread_id>')
@@ -63,10 +62,19 @@ def progress(thread_id):
     else:
         data = 0
     return str(data)
-    
 
+def train():
+    train_model()
+    threading.Timer(10*60, train).start()
 
-if __name__ == '__main__':
+def main():
     from priority import hightpriority
     hightpriority()
-    app.run()
+    global rec_alg
+    rec_alg = RecommendationAlgoritm()
+    t = threading.Timer(3, train)
+    t.start()
+    # app.run()
+
+# if __name__ == '__main__':
+main()
