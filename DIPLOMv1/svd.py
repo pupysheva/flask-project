@@ -1,6 +1,5 @@
 import numpy as np
 import time
-from typing import Callable
 
 from .fast_methods import _compute_val_metrics
 from .fast_methods import _initialization
@@ -35,45 +34,44 @@ class SVD():
         self.min_rating = min_rating
         self.max_rating = max_rating
 
-    def _preprocess_data(self, X, train=True):
+    def _preprocess_data(self, Data, is_training=True):
         """Сопоставляет идентификаторы пользователей и элементов с индексами и возвращает массив NumPy.
         Args:
-            X (pandas DataFrame): dataset
+            Data (pandas DataFrame): dataset
             train (boolean): флаг, который определяет является ли Х обучающим набором
         Returns:
-            X (numpy array): сопоставленный набор данных
+            Data (numpy array): сопоставленный набор данных
         """
-        X = X.copy()
+        Data = Data.copy()
 
-        if train:
-            u_ids = X['u_id'].unique().tolist()
-            i_ids = X['i_id'].unique().tolist()
+        if is_training:
+            u_ids = Data['u_id'].unique().tolist()
+            i_ids = Data['i_id'].unique().tolist()
 
             self.user_dict = dict(zip(u_ids, [i for i in range(len(u_ids))]))
             self.item_dict = dict(zip(i_ids, [i for i in range(len(i_ids))]))
 
-        X['u_id'] = X['u_id'].map(self.user_dict)
-        X['i_id'] = X['i_id'].map(self.item_dict)
+        Data['u_id'] = Data['u_id'].map(self.user_dict)
+        Data['i_id'] = Data['i_id'].map(self.item_dict)
 
         # Tag unknown users/items with -1 (when val)
-        X.fillna(-1, inplace=True)
+        Data.fillna(-1, inplace=True)
 
-        X['u_id'] = X['u_id'].astype(np.int32)
-        X['i_id'] = X['i_id'].astype(np.int32)
+        Data['u_id'] = Data['u_id'].astype(np.int32)
+        Data['i_id'] = Data['i_id'].astype(np.int32)
 
-        X = X[['u_id', 'i_id', 'rating']].values
+        Data = Data[['u_id', 'i_id', 'rating']].values
 
-        return X
+        return Data
 
-    def _sgd(self, X, X_val, progress):
+    def _sgd(self, Data, Data_val, progress):
         """Алгоритм SGD
         Args:
-            X (numpy array): обучающий набор, первый столбец должен содержать индексы пользователей, 
-		второго - индексы элементов, и третьего - рейтинга.
-            X_val (numpy array or `None`): валидационный набор данных
+            Data (numpy array): обучающий набор, первый столбец должен содержать индексы пользователей, второй - индексы элементов, и третий - рейтинг.
+            Data_val (numpy array or `None`): валидационный набор данных
         """
-        n_user = len(np.unique(X[:, 0]))
-        n_item = len(np.unique(X[:, 1]))
+        n_user = len(np.unique(Data[:, 0]))
+        n_item = len(np.unique(Data[:, 1]))
 
         pu, qi, bu, bi = _initialization(n_user, n_item, self.n_factors)
 
@@ -85,14 +83,14 @@ class SVD():
             start = self._on_epoch_begin(epoch_ix)
 
             if self.shuffle:
-                X = _shuffle(X)
+                Data = _shuffle(Data)
 
-            pu, qi, bu, bi = _run_epoch(X, pu, qi, bu, bi, self.global_mean,
+            pu, qi, bu, bi = _run_epoch(Data, pu, qi, bu, bi, self.global_mean,
                                         self.n_factors, self.lr, self.reg)
 
             
-            if X_val is not None:
-                val_metrics = _compute_val_metrics(X_val, pu, qi, bu, bi,
+            if Data_val is not None:
+                val_metrics = _compute_val_metrics(Data_val, pu, qi, bu, bi,
                                                        self.global_mean,
                                                        self.n_factors)
                 
@@ -116,15 +114,15 @@ class SVD():
         progress(1)
 
     @timer(text='\nTraining took ')
-    def fit(self, X, X_val=None, early_stopping=False, shuffle=False, progress=lambda p: None):
+    def fit(self, Data, Data_val=None, early_stopping=False, shuffle=False, progress=lambda p: None):
         """Настройка параметров модели
         Args:
-            X (pandas DataFrame): обучающий набор, должен иметь столбец `u_id` для идентификатора пользователя,
+            Data (pandas DataFrame): обучающий набор, должен иметь столбец `u_id` для идентификатора пользователя,
                 столбец «i_id» для идентификатора элемента и «rating».
-            X_val (pandas DataFrame, defaults to `None`): валидационный набор данных
+            Data_val (pandas DataFrame, defaults to `None`): валидационный набор данных
             early_stopping (boolean): стоит ли прекратить обучение на основе вычисления ошибок на валидационной выборке
-	    shuffle (boolean): стоит ли перемешивать данные перед каждой эпохой.
-        progress (Callable[[float], None]): функция получения статуса прогресса от 0 до 1
+            shuffle (boolean): стоит ли перемешивать данные перед каждой эпохой.
+            progress (Callable[[float], None]): функция получения статуса прогресса от 0 до 1
         Returns:
             self (SVD object): обученная модель
         """
@@ -132,15 +130,15 @@ class SVD():
         self.early_stopping = early_stopping
         self.shuffle = shuffle
         print('Preprocessing data...\n')
-        X = self._preprocess_data(X)
+        Data = self._preprocess_data(Data)
         progress(0.50)
 
-        if X_val is not None:
-            X_val = self._preprocess_data(X_val, train=False)
+        if Data_val is not None:
+            Data_val = self._preprocess_data(Data_val, is_training=False)
 
-        self.global_mean = np.mean(X[:, 2])
+        self.global_mean = np.mean(Data[:, 2])
         progress(0.75)
-        self._sgd(X, X_val, lambda p: progress(p * 0.25 + 0.75))
+        self._sgd(Data, Data_val, lambda p: progress(p * 0.25 + 0.75))
         progress(1)
 
         return self
@@ -154,20 +152,20 @@ class SVD():
         Returns:
             pred (float): рейтинг для данной пары пользователь - элемент
         """
-        user_known, item_known = False, False
+        is_user_known, is_item_known = False, False
         pred = self.global_mean
 
         if u_id in self.user_dict:
-            user_known = True
+            is_user_known = True
             u_ix = self.user_dict[u_id]
             pred += self.bu[u_ix]
 
         if i_id in self.item_dict:
-            item_known = True
+            is_item_known = True
             i_ix = self.item_dict[i_id]
             pred += self.bi[i_ix]
 
-        if  user_known and item_known:
+        if  is_user_known and is_item_known:
             pred += np.dot(self.pu[u_ix], self.qi[i_ix])
 
         if clip:
@@ -176,10 +174,10 @@ class SVD():
 
         return pred
 
-    def predict(self, X):
+    def predict(self, Data):
         """Возвращает оценки нескольких заданных пар пользователь - элемент
         Args:
-            X (pandas DataFrame): все пары пользователь - элемент, для которых мы хотим
+            Data (pandas DataFrame): все пары пользователь - элемент, для которых мы хотим
                 предсказывать рейтинги. Должен содержать столбцы `u_id` и `i_id`.
         Returns:
             predictions: список с прогнозами для пар пользователь - элемент
@@ -187,7 +185,7 @@ class SVD():
         """
         predictions = []
 
-        for u_id, i_id in zip(X['u_id'], X['i_id']):
+        for u_id, i_id in zip(Data['u_id'], Data['i_id']):
             predictions.append(self.predict_pair(u_id, i_id))
 
         return predictions

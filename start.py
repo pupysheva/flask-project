@@ -1,5 +1,5 @@
-from my_module import RecommendationAlgoritm
-import my_module_interface
+from reco_engine import RecommendationAlgoritm
+import module_for_retraining
 
 from flask import Flask, render_template, current_app
 from multiprocessing import Process, Queue
@@ -37,7 +37,7 @@ def train_model():
     def thf():
         print(time.time(), "train_model.t started")
         q = Queue()
-        p = Process(target=my_module_interface.train_model, args=(q, thread_id))
+        p = Process(target=module_for_retraining.train_model, args=(q, thread_id))
         p.start()
         global rec_alg
         rec_alg = q.get()

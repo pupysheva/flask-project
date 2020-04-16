@@ -87,7 +87,7 @@ class RecommendationAlgoritm:
         print(datetime.now(), 'finish SVD create. Start fit...')
 
         thread.set_progress(0.50)
-        svd.fit(X=train_user, X_val=val_user, early_stopping=False, shuffle=False, progress=lambda p: thread.set_progress(p * 0.25 + 0.50))  # early_stopping=True
+        svd.fit(Data=train_user, Data_val=val_user, early_stopping=False, shuffle=False, progress=lambda p: thread.set_progress(p * 0.25 + 0.50))  # early_stopping=True
         print(datetime.now(), 'finish svd.fit. Start predict')
 
         thread.set_progress(0.75)

@@ -1,4 +1,4 @@
-from my_module import RecommendationAlgoritm
+from reco_engine import RecommendationAlgoritm
 from multiprocessing import Queue
 from priority import lowpriority
 import struct

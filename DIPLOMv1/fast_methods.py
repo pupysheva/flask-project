@@ -1,15 +1,15 @@
 import numpy as np
 
-from numba import njit
+from numba import njit, prange
 
 
 @njit
-def _shuffle(X):
-    np.random.shuffle(X)
-    return X
+def _shuffle(Data):
+    np.random.shuffle(Data)
+    return Data
 
 
-@njit
+@njit(parallel=True)
 def _initialization(n_user, n_item, n_factors):
     """Инициализация смещений и матриц признаков пользователей и элементов.
     Args:
@@ -17,74 +17,74 @@ def _initialization(n_user, n_item, n_factors):
         n_item (int): количество пользователей
         n_factors (int): количество признаков
     Returns:
-        pu (numpy array): матрица признаков пользователей
-        qi (numpy array): матрица признаков элементов
-        bu (numpy array): вектор смециений пользователей
-        bi (numpy array): вектор смециений элемнетов
+        user_embeddings (numpy array): матрица признаков пользователей
+        movie_embeddings (numpy array): матрица признаков элементов
+        user_deviations (numpy array): вектор смециений пользователей
+        movie_deviations (numpy array): вектор смециений элемнетов
     """
-    pu = np.random.normal(0, .1, (n_user, n_factors))
-    qi = np.random.normal(0, .1, (n_item, n_factors))
+    user_embeddings = np.random.normal(0, .1, (n_user, n_factors))
+    movie_embeddings = np.random.normal(0, .1, (n_item, n_factors))
 
-    bu = np.zeros(n_user)
-    bi = np.zeros(n_item)
+    user_deviations = np.zeros(n_user)
+    movie_deviations = np.zeros(n_item)
 
-    return pu, qi, bu, bi
+    return user_embeddings, movie_embeddings, user_deviations, movie_deviations
 
 
-@njit
-def _run_epoch(X, pu, qi, bu, bi, global_mean, n_factors, lr, reg):
-    """Запускает эпоху, обновляя вес модели (pu, qi, bu, bi).
+@njit(parallel=True)
+def _run_epoch(Data, user_embeddings, movie_embeddings, user_deviations, movie_deviations, global_mean, n_factors, lr, reg):
+    """Запускает эпоху, обновляя вес модели (user_embeddings, movie_embeddings, user_deviations, movie_deviations).
     Args:
-        X (numpy array): тренировочное множество
-        pu (numpy array): матрица признаков пользователей
-        qi (numpy array): матрица признаков элементов
-        bu (numpy array): вектор смециений пользователей
-        bi (numpy array): вектор смециений элемнетов
+        Data (numpy array): тренировочное множество
+        user_embeddings (numpy array): матрица признаков пользователей
+        movie_embeddings (numpy array): матрица признаков элементов
+        user_deviations (numpy array): вектор смециений пользователей
+        movie_deviations (numpy array): вектор смециений элемнетов
         global_mean (float): среднее по всем оценкам
         n_factors (int): количество признаков
         lr (float): скорость обучения
         reg (float): коэффициент регуляризации
     Returns:
-        pu (numpy array): обновленная матрица признаков пользователей
-        qi (numpy array): обновленная матрица признаков элементов
-        bu (numpy array): обновленный вектор смециений пользователей
-        bi (numpy array): обновленный вектор смециений элемнетов
+        user_embeddings (numpy array): обновленная матрица признаков пользователей
+        movie_embeddings (numpy array): обновленная матрица признаков элементов
+        user_deviations (numpy array): обновленный вектор смециений пользователей
+        movie_deviations (numpy array): обновленный вектор смециений элемнетов
     """
-    for i in range(X.shape[0]):
-        user, item, rating = int(X[i, 0]), int(X[i, 1]), X[i, 2]
+    for i in prange(Data.shape[0]):
+        user, item, rating = int(Data[i, 0]), int(Data[i, 1]), Data[i, 2]
 
         # Предсказание текущей оценки
-        pred = global_mean + bu[user] + bi[item]
+        pred = global_mean + user_deviations[user] + movie_deviations[item]
 
         for factor in range(n_factors):
-            pred += pu[user, factor] * qi[item, factor]
+            pred += user_embeddings[user, factor] * movie_embeddings[item, factor]
 
         err = rating - pred
 
         # Обновление отклонений
-        bu[user] += lr * (err - reg * bu[user])
-        bi[item] += lr * (err - reg * bi[item])
+        user_deviations[user] += lr * (err - reg * user_deviations[user])
+        movie_deviations[item] += lr * (err - reg * movie_deviations[item])
 
         # Обновление матриц пользователей и фильмов
-        for factor in range(n_factors):
-            puf = pu[user, factor]
-            qif = qi[item, factor]
+        for factor in prange(n_factors):
+            puf = user_embeddings[user, factor]
+            qif = movie_embeddings[item, factor]
 
-            pu[user, factor] += lr * (err * qif - reg * puf)
-            qi[item, factor] += lr * (err * puf - reg * qif)
+            user_embeddings[user, factor] += lr * (err * qif - reg * puf)
+            movie_embeddings[item, factor] += lr * (err * puf - reg * qif)
 
-    return pu, qi, bu, bi
+    return user_embeddings, movie_embeddings, user_deviations, movie_deviations
 
 
-@njit
-def _compute_val_metrics(X_val, pu, qi, bu, bi, global_mean, n_factors):
+@njit(parallel=True)
+def _compute_val_metrics(Data_val, user_embeddings, movie_embeddings, user_deviations, movie_deviations, global_mean, n_factors):
     """Вычисляет метрики проверки (ошибка, rmse и mae).
     Args:
-        X_val (numpy array): валидационный набор данных
-        pu (numpy array): матрица признаков пользователей
-        qi (numpy array): матрица признаков элементов
-        bu (numpy array): вектор смециений пользователей
-        bi (numpy array): вектор смециений элемнетов
+        Data_val (numpy array): валидационный набор данных
+        user_embeddings (numpy array): матрица признаков пользователей
+        movie_embeddings (numpy array): матрица признаков элементов
+        user_deviations (numpy array): вектор смециений пользователей
+        movie_deviations (numpy array): вектор смециений элемнетов
         global_mean (float): среднее по всем оценкам
         n_factors (int): количество признаков
     Returns:
@@ -92,19 +92,19 @@ def _compute_val_metrics(X_val, pu, qi, bu, bi, global_mean, n_factors):
     """
     residuals = []
 
-    for i in range(X_val.shape[0]):
-        user, item, rating = int(X_val[i, 0]), int(X_val[i, 1]), X_val[i, 2]
+    for i in range(Data_val.shape[0]):
+        user, item, rating = int(Data_val[i, 0]), int(Data_val[i, 1]), Data_val[i, 2]
         pred = global_mean
 
         if user > -1:
-            pred += bu[user]
+            pred += user_deviations[user]
 
         if item > -1:
-            pred += bi[item]
+            pred += movie_deviations[item]
 
         if (user > -1) and (item > -1):
             for factor in range(n_factors):
-                pred += pu[user, factor] * qi[item, factor]
+                pred += user_embeddings[user, factor] * movie_embeddings[item, factor]
 
         residuals.append(rating - pred)
 
