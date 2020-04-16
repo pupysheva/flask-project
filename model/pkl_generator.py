@@ -1,5 +1,5 @@
-from DIPLOMv1.loading_dataset import fetch_ml_ratings
-from DIPLOMv1 import SVD
+from model.loading_dataset import fetch_ml_ratings
+from model import SVD
 
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 

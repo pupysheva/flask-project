@@ -5,9 +5,9 @@ import time
 from datetime import datetime
 from itertools import product
 from sklearn.metrics import mean_squared_error, mean_absolute_error
-from pkl_generator import generate_if_need
+from model.pkl_generator import generate_if_need
 
-from DIPLOMv1 import SVD
+from model import SVD
 
 
 class RecommendationAlgoritm:
