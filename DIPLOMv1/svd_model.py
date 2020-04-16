@@ -16,10 +16,10 @@ class SVD():
         n_epochs (int): количество итераций
         n_factors (int): количество признаков
         global_mean (float): среднее по всем оценкам
-        pu (numpy array): матрица признаков пользователей
-        qi (numpy array): матрица признаков элементов
-        bu (numpy array): вектор смециений пользователей
-        bi (numpy array): вектор смециений элемнетов
+        user_embeddings (numpy array): матрица признаков пользователей
+        movie_embeddings (numpy array): матрица признаков элементов
+        user_deviations (numpy array): вектор смециений пользователей
+        movie_deviations (numpy array): вектор смециений элемнетов
         early_stopping (boolean): стоит ли прекратить обучение на основе вычисления ошибок на валидационной выборке
         shuffle (boolean): стоит ли перемешивать данные перед каждой эпохой.
     """
@@ -73,7 +73,7 @@ class SVD():
         n_user = len(np.unique(Data[:, 0]))
         n_item = len(np.unique(Data[:, 1]))
 
-        pu, qi, bu, bi = _initialization(n_user, n_item, self.n_factors)
+        user_embeddings, movie_embeddings, user_deviations, movie_deviations = _initialization(n_user, n_item, self.n_factors)
 
         if self.early_stopping:
             list_val_rmse = [float('inf')]
@@ -85,12 +85,12 @@ class SVD():
             if self.shuffle:
                 Data = _shuffle(Data)
 
-            pu, qi, bu, bi = _run_epoch(Data, pu, qi, bu, bi, self.global_mean,
+            user_embeddings, movie_embeddings, user_deviations, movie_deviations = _run_epoch(Data, user_embeddings, movie_embeddings, user_deviations, movie_deviations, self.global_mean,
                                         self.n_factors, self.lr, self.reg)
 
             
             if Data_val is not None:
-                val_metrics = _compute_val_metrics(Data_val, pu, qi, bu, bi,
+                val_metrics = _compute_val_metrics(Data_val, user_embeddings, movie_embeddings, user_deviations, movie_deviations,
                                                        self.global_mean,
                                                        self.n_factors)
                 
@@ -107,10 +107,10 @@ class SVD():
             progress(float(epoch_ix) / self.n_epochs)
             time.sleep(0.001)
 
-        self.pu = pu
-        self.qi = qi
-        self.bu = bu
-        self.bi = bi
+        self.user_embeddings = user_embeddings
+        self.movie_embeddings = movie_embeddings
+        self.user_deviations = user_deviations
+        self.movie_deviations = movie_deviations
         progress(1)
 
     @timer(text='\nTraining took ')
@@ -158,15 +158,15 @@ class SVD():
         if u_id in self.user_dict:
             is_user_known = True
             u_ix = self.user_dict[u_id]
-            pred += self.bu[u_ix]
+            pred += self.user_deviations[u_ix]
 
         if i_id in self.item_dict:
             is_item_known = True
             i_ix = self.item_dict[i_id]
-            pred += self.bi[i_ix]
+            pred += self.movie_deviations[i_ix]
 
         if  is_user_known and is_item_known:
-            pred += np.dot(self.pu[u_ix], self.qi[i_ix])
+            pred += np.dot(self.user_embeddings[u_ix], self.movie_embeddings[i_ix])
 
         if clip:
             pred = self.max_rating if pred > self.max_rating else pred
