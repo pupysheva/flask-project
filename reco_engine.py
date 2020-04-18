@@ -17,10 +17,11 @@ class RecommendationAlgoritm:
         generate_if_need()
 
         with open('resources/ml-20m/model_svd.pkl', 'rb') as f:
-            self.svd = pickle.load(f)
+            svd = pickle.load(f)
 
-        self.data_with_user = pd.read_pickle('resources/ml-20m/data_with_user.pkl')
-        self.movies_df = pd.read_pickle('resources/ml-20m/movies.pkl')
+        data_with_user = pd.read_pickle('resources/ml-20m/data_with_user.pkl')
+        movies_df = pd.read_pickle('resources/ml-20m/movies.pkl')
+        self.global_tables = DBtables(svd, data_with_user, movies_df)
         print('\n Время чтения:', time.time() - now)
     
     def save(self):
@@ -38,23 +39,27 @@ class RecommendationAlgoritm:
         return rated_df
 
     def get_recommendation(self, user_id):
-        user_id = [user_id]
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!1!!Плохо, опасно
+        local_table = self.global_tables
+        (svd, data_with_user, movies_df) = (local_table.svd, local_table.data_with_user, local_table.movies_df)
 
+        user_id = [user_id]
         now = time.time()
-        all_movies = self.data_with_user.i_id.unique()
+        all_movies = data_with_user.i_id.unique()
         recommendations = pd.DataFrame(list(product(user_id, all_movies)), columns=['u_id', 'i_id'])
 
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
         # Получение прогноза оценок для user_id
-        pred_train = self.svd.predict(recommendations)
+        pred_train = svd.predict(recommendations)
         recommendations['prediction'] = pred_train
 
         # sorted_user_predictions = recommendations.sort_values(by='prediction', ascending=False)
         # print(sorted_user_predictions.head(10))
 
-        user_ratings = self.data_with_user[self.data_with_user.u_id == user_id[0]]
+        user_ratings = data_with_user[local_table.data_with_user.u_id == user_id[0]]
         user_ratings.columns = ['u_id', 'i_id', 'rating']
         # Топ 20 фильмов для рекомендации
-        recommendations = self.movies_df[~self.movies_df['i_id'].isin(user_ratings['i_id'])]. \
+        recommendations = local_table.movies_df[~local_table.movies_df['i_id'].isin(user_ratings['i_id'])]. \
             merge(pd.DataFrame(recommendations).reset_index(drop=True), how='inner', left_on='i_id',
                   right_on='i_id'). \
             sort_values(by='prediction', ascending=False)
@@ -67,14 +72,17 @@ class RecommendationAlgoritm:
         thread.set_progress(0.01)
         print(datetime.now(), 'Progress set 0.01.')
 
+
+        # Загрузить данные из бд: data_with_user, movies_df
+
         test_user = 0
-        train_user = self.data_with_user.sample(frac=0.8)
+        train_user = data_with_user.sample(frac=0.8)
         thread.set_progress(0.09)
         print(datetime.now(), 'self.data_with_user.sample(frac=0.8)')
-        val_user = self.data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)
+        val_user = data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)
         thread.set_progress(0.19)
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)')
-        test_user = self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())
+        test_user = data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())')
 
         lr, reg, factors = (0.02, 0.016, 64)
@@ -101,5 +109,15 @@ class RecommendationAlgoritm:
         print("Test RMSE: {:.2f}".format(rmse))
         print('{} factors, {} lr, {} reg'.format(factors, lr, reg))
 
-        self.svd = svd
+
+        # !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!Плохо, опасно
+        self.global_tables = DBtables(svd, data_with_user, movies_df)
+
+
         thread.set_progress(1.00)
+
+class DBtables():
+    def __init__(self, svd, data_with_user, movies_df):
+        self.svd = svd
+        self.data_with_user = data_with_user
+        self.movies_df = movies_df

@@ -1,0 +1,13 @@
+Movies{
+    id
+    title
+    years
+    genres
+}
+
+Ratings{
+    id
+    user_id
+    movie_id
+    rating
+}
