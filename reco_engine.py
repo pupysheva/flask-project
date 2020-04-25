@@ -6,28 +6,85 @@ from datetime import datetime
 from itertools import product
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from model.pkl_generator import generate_if_need
-
+from sqlalchemy import create_engine, DateTime, Integer, String, Float
 from model import SVD
 
 
-class RecommendationAlgoritm:
-    def __init__(self):
-        now = time.time()
+class RecommendationAlgorithm:
+    def __init__(self, from_pkl):
 
-        generate_if_need()
+        if from_pkl:
+            print("read in PKL ...")
+            now = time.time()
+            generate_if_need()
+            with open('resources/ml-20m/model_svd.pkl', 'rb') as f:
+                self.svd = pickle.load(f)
+            self.data_with_user = pd.read_pickle('resources/ml-20m/data_with_user.pkl')
+            self.movies_df = pd.read_pickle('resources/ml-20m/movies.pkl')
+            print('\n Время чтения PKL файлов:', time.time() - now)
 
-        with open('resources/ml-20m/model_svd.pkl', 'rb') as f:
-            self.svd = pickle.load(f)
+        else:
+            print("read in DB ...")
+            now = time.time()
+            db_url = 'sqlite:///./movies_recom_db.db'
+            engine = create_engine(db_url)
 
-        self.data_with_user = pd.read_pickle('resources/ml-20m/data_with_user.pkl')
-        self.movies_df = pd.read_pickle('resources/ml-20m/movies.pkl')
-        print('\n Время чтения:', time.time() - now)
+            if not engine.dialect.has_table(engine, "Movies"):
+                self.movies_df = generate_if_need(svd="ignore", data_with_user="ignore")[1]
+                self.save(in_db=True, engine=engine, table_name="Movies")
+            else:
+                self.movies_df = pd.read_sql_table("Movies", con=engine)
+
+            if not engine.dialect.has_table(engine, "Ratings"):
+                self.data_with_user = generate_if_need(svd="ignore", movies_df=self.movies_df)[0]
+                self.save(in_db=True, engine=engine, table_name="Ratings")
+            else:
+                df_generator = pd.read_sql_table("Ratings",
+                                                 con=engine,
+                                                 columns=["u_id", "i_id", "rating", "timestamp"],
+                                                 chunksize=1000000)
+                now_r = time.time()
+                # Create empty list
+                list_of_dfs = []
+                # Create empty dataframe
+                self.data_with_user = pd.DataFrame()
+                # Start Chunking
+                for chunk_df in df_generator:
+                    # Start Appending Data Chunks from SQL Result set into List
+                    list_of_dfs.append(chunk_df)
+                # Start appending data from list to dataframe
+                self.data_with_user = pd.concat(list_of_dfs, ignore_index=True)
+                print('\nВремя соединения chunk`ов', time.time() - now_r)
+                self.data_with_user.drop(columns=['timestamp'], inplace=True)
+
+            self.svd = generate_if_need(movies_df=self.movies_df, data_with_user=self.data_with_user)
+            print('\nВремя чтения BD:', time.time() - now)
     
-    def save(self):
-        with open ('resources/ml-20m/model_svd.pkl', 'wb') as f:
-            pickle.dump(self.svd, f)
-        self.data_with_user.to_pickle('resources/ml-20m/data_with_user.pkl')
-        self.movies_df.to_pickle('resources/ml-20m/movies.pkl')
+    def save(self, engine, table_name, in_pkl=False, in_db=False):
+        if in_pkl:
+            with open('resources/ml-20m/model_svd.pkl', 'wb') as f:
+                pickle.dump(self.svd, f)
+            self.data_with_user.to_pickle('resources/ml-20m/data_with_user.pkl')
+            self.movies_df.to_pickle('resources/ml-20m/movies.pkl')
+        if in_db:
+            if table_name == "Movies":
+                self.movies_df.to_sql(name=table_name,
+                                      con=engine,
+                                      if_exists='replace',
+                                      index=False,
+                                      dtype={"i_id": Integer,
+                                             "title": String(50),
+                                             "genres": String(150)})
+            if table_name == "Ratings":
+                self.data_with_user.to_sql(name=table_name,
+                                           con=engine,
+                                           if_exists='replace',
+                                           index=True, #Запишет индексы строк dataFrame в виде столбца
+                                           index_label = "id_in_db",
+                                           dtype={"user_id": Integer,
+                                                  "movie_id": Integer,
+                                                  "rating": Float,
+                                                  "timestamp": DateTime})
 
     def get_films_rated_by_user(self, user_id):
         user_ratings = self.data_with_user[self.data_with_user.u_id == user_id]

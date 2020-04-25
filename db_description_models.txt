@@ -1,0 +1,35 @@
+# В таблицах:
+Movies{
+    i_id
+    title
+    genres
+}
+Ratings{
+    id_in_db
+    user_id
+    movie_id
+    rating
+    timestamp
+}
+
+
+-----------------------------------------------
+# В датафрейме:
+movies_df:
+indexes  i_id	title	genres
+1	      1
+2         4
+3         102
+4
+5
+6
+
+ratings_df:
+indexes  i_id	u_id	 rating	   timstamp
+1	      1
+2         4
+3         102
+4
+5
+6
+

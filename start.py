@@ -1,7 +1,7 @@
-from reco_engine import RecommendationAlgoritm
+from reco_engine import RecommendationAlgorithm
 import module_for_retraining
 
-from flask import Flask, render_template, current_app
+from flask import Flask, render_template
 from multiprocessing import Process, Queue
 
 
@@ -65,14 +65,14 @@ def progress(thread_id):
 
 def train():
     train_model()
-    threading.Timer(10*60, train).start()
+    threading.Timer(60*2*60, train).start()
 
 def main():
     from priority import hightpriority
     hightpriority()
     global rec_alg
-    rec_alg = RecommendationAlgoritm()
-    t = threading.Timer(3, train)
+    rec_alg = RecommendationAlgorithm(from_pkl=False)
+    t = threading.Timer(5*60, train)
     t.start()
     # app.run()
 

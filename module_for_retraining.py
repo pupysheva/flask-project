@@ -1,10 +1,11 @@
-from reco_engine import RecommendationAlgoritm
+from reco_engine import RecommendationAlgorithm
 from multiprocessing import Queue
 from priority import lowpriority
 import struct
 import tempfile
 
 tmppath = '{}/{}'.format(tempfile.gettempdir(), 'flask-project')
+
 
 class ProgressInFile:
     def __init__(self, id_thread):
@@ -23,9 +24,10 @@ class ProgressInFile:
     def __exit__(self, exc_type, exc_val, exc_tb):
         self.f.close()
 
+
 def train_model(q: Queue, id_thread: int):
     lowpriority()
-    ra = RecommendationAlgoritm()
+    ra = RecommendationAlgorithm(from_pkl=False)
     with ProgressInFile(id_thread) as f:
         ra.train_model(f)
     q.put(ra)
