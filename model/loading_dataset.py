@@ -89,7 +89,7 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
 
         # for using cache: os.remove(zip_path)
 
-        return fetch_ml_ratings(variant=variant)
+        return fetch_ml_ratings(variant=variant, target_df=target_df)
 
     else:
         print('Downloading data...')
