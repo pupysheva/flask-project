@@ -19,7 +19,7 @@ VARIANTS = {
 }
 
 
-def ml_ratings_csv_to_df(variant, rating_csv_path):
+def ml_ratings_csv_to_df(rating_csv_path, variant):
     # Чтение ratings.csv
     names = ['u_id', 'i_id', 'rating', 'timestamp']
     dtype = {'u_id': np.uint32, 'i_id': np.uint32, 'rating': np.float64}
