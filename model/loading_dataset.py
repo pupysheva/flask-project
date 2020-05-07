@@ -94,4 +94,4 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
         with urllib.request.urlopen(url) as r, open(zip_path, 'wb') as f:
             shutil.copyfileobj(r, f)
 
-        return fetch_ml_ratings(variant=variant)
+        return fetch_ml_ratings(variant=variant, target_df=target_df)
