@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# utf-8
 def priority(i):
     """ Set the priority of the process to below-normal."""
 

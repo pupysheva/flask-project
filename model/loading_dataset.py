@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# utf-8
 import datetime
 import os
 import urllib
@@ -76,7 +78,7 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
         return df
 
     elif os.path.exists(zip_path):
-        print('Unzipping data...')
+        print('Unzipping data...', zip_path)
 
         with zipfile.ZipFile(zip_path, 'r') as zf:
             zf.extractall(data_dir_path)

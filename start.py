@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# utf-8
 from reco_engine import RecommendationAlgorithm
 import module_for_retraining
 
@@ -27,10 +29,12 @@ rec_alg = None
 
 @app.route('/get_recommendation/<int:user_id>', methods=["GET"])
 def get_recommendation(user_id):
+    past = time.time()
     global rec_alg
     recommendations = rec_alg.get_recommendation(user_id)
     return render_template('main.html',  tables=[recommendations.to_html(classes='data', index=False)],
-                           titles=recommendations.columns.values)
+                           titles=recommendations.columns.values,
+                           time=(time.time() - past))
 
 @app.route('/train', methods=["POST"])
 def train_model():
