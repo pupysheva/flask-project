@@ -45,6 +45,7 @@ def ml_movies_csv_to_df(movie_csv_path, variant):
 
 
 def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
+    os.makedirs(data_dir_path, exist_ok=True)
     dirname = 'ml-' + variant
     ratings_filename = VARIANTS[variant]['ratings']['filename']
     csv_path_ratings = os.path.join(data_dir_path, dirname, ratings_filename)
@@ -94,7 +95,7 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
         return fetch_ml_ratings(variant=variant, target_df=target_df)
 
     else:
-        print('Downloading data...')
+        print('Downloading data from', url, 'to', zip_path)
         with urllib.request.urlopen(url) as r, open(zip_path, 'wb') as f:
             shutil.copyfileobj(r, f)
 
