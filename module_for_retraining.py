@@ -29,7 +29,7 @@ class ProgressInFile:
 
 def train_model(q: Queue, id_thread: int):
     lowpriority()
-    ra = RecommendationAlgorithm(from_pkl=False)
+    ra = RecommendationAlgorithm('-pkl' in sys.argv)
     with ProgressInFile(id_thread) as f:
         ra.train_model(f)
     q.put(ra)

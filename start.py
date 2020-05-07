@@ -1,5 +1,15 @@
 #!/usr/bin/python
 # utf-8
+import sys
+
+if '-h' in sys.argv:
+    print(
+'''usage: ./start.py [-h|-pkl]
+-h:	this help.
+-pkl:	read and save via pkl files.
+''')
+    exit()
+
 from reco_engine import RecommendationAlgorithm
 import module_for_retraining
 
@@ -75,7 +85,7 @@ def main():
     from priority import hightpriority
     hightpriority()
     global rec_alg
-    rec_alg = RecommendationAlgorithm(from_pkl=False)
+    rec_alg = RecommendationAlgorithm('-pkl' in sys.argv)
     t = threading.Timer(5*60, train)
     t.start()
     # app.run()
