@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# utf-8
 from model.loading_dataset import fetch_ml_ratings
 from model import SVD
 

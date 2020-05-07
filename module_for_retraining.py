@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# utf-8
 from reco_engine import RecommendationAlgorithm
 from multiprocessing import Queue
 from priority import lowpriority

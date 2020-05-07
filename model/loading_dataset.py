@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# utf-8
 import datetime
 import os
 import urllib
@@ -19,7 +21,7 @@ VARIANTS = {
 }
 
 
-def ml_ratings_csv_to_df(rating_csv_path, variant):
+def ml_ratings_csv_to_df(variant, csv_path_ratings):
     # Чтение ratings.csv
     names = ['u_id', 'i_id', 'rating', 'timestamp']
     dtype = {'u_id': np.uint32, 'i_id': np.uint32, 'rating': np.float64}
@@ -57,7 +59,7 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
     if target_df == "ratings" and os.path.exists(csv_path_ratings):
         if not os.path.exists(csv_path_ratings + '.pkl'):
             print('read csv...')
-            df = ml_ratings_csv_to_df(csv_path_ratings, variant)
+            df = ml_ratings_csv_to_df(variant, csv_path_ratings)
             print('save csv.pkl...')
             df.to_pickle(csv_path_ratings + '.pkl')
         else:
@@ -76,7 +78,7 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
         return df
 
     elif os.path.exists(zip_path):
-        print('Unzipping data...')
+        print('Unzipping data...', zip_path)
 
         with zipfile.ZipFile(zip_path, 'r') as zf:
             zf.extractall(data_dir_path)
@@ -87,7 +89,7 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
 
         # for using cache: os.remove(zip_path)
 
-        return fetch_ml_ratings(variant=variant)
+        return fetch_ml_ratings(variant=variant, target_df=target_df)
 
     else:
         print('Downloading data...')
