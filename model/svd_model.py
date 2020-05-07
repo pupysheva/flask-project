@@ -185,9 +185,9 @@ class SVD():
             predictions: список с прогнозами для пар пользователь - элемент
                 pairs.
         """
-        predictions = []
+        predictions = [None * len(Data)]
 
-        for u_id, i_id in zip(Data['u_id'], Data['i_id']):
+        for i, (u_id, i_id) in enumerate(zip(Data['u_id'], Data['i_id'])):
             predictions.append(self.predict_pair(u_id, i_id))
 
         return predictions
