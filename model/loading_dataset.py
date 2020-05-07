@@ -57,7 +57,7 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
     if target_df == "ratings" and os.path.exists(csv_path_ratings):
         if not os.path.exists(csv_path_ratings + '.pkl'):
             print('read csv...')
-            df = ml_ratings_csv_to_df(csv_path_ratings, variant)
+            df = ml_ratings_csv_to_df(variant, csv_path_ratings)
             print('save csv.pkl...')
             df.to_pickle(csv_path_ratings + '.pkl')
         else:
