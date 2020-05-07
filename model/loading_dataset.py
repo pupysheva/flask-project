@@ -57,24 +57,26 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
               '.zip'
 
     if target_df == "ratings" and os.path.exists(csv_path_ratings):
-        if not os.path.exists(csv_path_ratings + '.pkl'):
-            print('read csv...')
+        pkl_path_ratings = csv_path_ratings + '.pkl'
+        if not os.path.exists(pkl_path_ratings):
+            print('read csv...', csv_path_ratings)
             df = ml_ratings_csv_to_df(variant, csv_path_ratings)
-            print('save csv.pkl...')
-            df.to_pickle(csv_path_ratings + '.pkl')
+            print('save csv.pkl...', pkl_path_ratings)
+            df.to_pickle(pkl_path_ratings)
         else:
-            print('read csv.pkl...')
-            df = pd.read_pickle(csv_path_ratings + '.pkl')
+            print('read csv.pkl...', pkl_path_ratings)
+            df = pd.read_pickle(pkl_path_ratings)
         return df
     if target_df == "movies" and os.path.exists(csv_path_movies):
-        if not os.path.exists(csv_path_movies + '.pkl'):
-            print('read csv...')
+        pkl_path_movies = csv_path_movies + '.pkl'
+        if not os.path.exists(pkl_path_movies):
+            print('read csv...', csv_path_movies)
             df = ml_movies_csv_to_df(csv_path_movies, variant)
-            print('save csv.pkl...')
-            df.to_pickle(csv_path_movies + '.pkl')
+            print('save csv.pkl...', pkl_path_movies)
+            df.to_pickle(pkl_path_movies)
         else:
-            print('read csv.pkl...')
-            df = pd.read_pickle(csv_path_movies + '.pkl')
+            print('read csv.pkl...', pkl_path_movies)
+            df = pd.read_pickle(pkl_path_movies)
         return df
 
     elif os.path.exists(zip_path):
