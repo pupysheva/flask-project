@@ -27,7 +27,7 @@ def ml_ratings_csv_to_df(variant, csv_path_ratings):
     dtype = {'u_id': np.uint32, 'i_id': np.uint32, 'rating': np.float64}
     def date_parser(time):
         return datetime.datetime.fromtimestamp(float(time))
-    ratings_df = pd.read_csv(rating_csv_path, names=names, dtype=dtype, header=0,
+    ratings_df = pd.read_csv(csv_path_ratings, names=names, dtype=dtype, header=0,
                      sep=VARIANTS[variant]['ratings']['sep'], parse_dates=['timestamp'],
                      date_parser=date_parser, engine='python')
     ratings_df.sort_values(by='timestamp', inplace=True)
