@@ -1,3 +1,5 @@
+#!/usr/bin/python
+# utf-8
 import time
 
 from functools import wraps
