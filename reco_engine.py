@@ -55,7 +55,7 @@ class RecommendationAlgorithm:
                 print('\nВремя соединения chunk`ов', time.time() - now_r)
                 self.data_with_user.drop(columns=['timestamp'], inplace=True)
 
-            self.svd = generate_if_need(movies_df=self.movies_df, data_with_user=self.data_with_user)
+            self.svd = generate_if_need(movies_df=self.movies_df, data_with_user=self.data_with_user)[2]
             print('\nВремя чтения BD:', time.time() - now)
     
     def save(self, engine, table_name, in_pkl=False, in_db=False):

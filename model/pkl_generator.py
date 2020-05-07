@@ -112,6 +112,5 @@ def generate_if_need(path='./resources', svd=None, movies_df=None, data_with_use
 
     if svd is None:
         svd = create_or_load_svd(svd_filename, data_with_user)
-        return svd
 
     return (data_with_user, movies_df, svd)
