@@ -8,6 +8,8 @@ from .fast_methods import _initialization
 from .fast_methods import _run_epoch
 from .fast_methods import _shuffle
 from .utils import timer
+from multiprocessing import Pool
+import os
 
 
 class SVD():
@@ -176,6 +178,13 @@ class SVD():
 
         return pred
 
+
+    def _predict_step(args):
+        (self, predictions, thread_i, Data) = args
+        for i, (u_id, i_id) in enumerate(zip(Data['u_id'], Data['i_id'])):
+            if i % os.cpu_count() == thread_i:
+                predictions[i] = self.predict_pair(u_id, i_id)
+
     def predict(self, Data):
         """Возвращает оценки нескольких заданных пар пользователь - элемент
         Args:
@@ -187,8 +196,8 @@ class SVD():
         """
         predictions = [None] * len(Data)
 
-        for i, (u_id, i_id) in enumerate(zip(Data['u_id'], Data['i_id'])):
-            predictions.append(self.predict_pair(u_id, i_id))
+        with Pool(os.cpu_count()) as p:
+            p.map(SVD._predict_step, zip([self] * os.cpu_count(), [predictions] * os.cpu_count(), range(os.cpu_count()), [Data] * os.cpu_count()))
 
         return predictions
 
