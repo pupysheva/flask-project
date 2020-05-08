@@ -23,7 +23,7 @@ if not os.path.exists(tmppath):
     os.mkdir(tmppath)
 
 rec_alg = None
-
+from_pkl = True
 
 @app.route('/get_recommendation/<int:user_id>', methods=["GET"])
 def get_recommendation(user_id):
@@ -37,7 +37,7 @@ def train_model():
     def thf():
         print(time.time(), "train_model.t started")
         q = Queue()
-        p = Process(target=module_for_retraining.train_model, args=(q, thread_id))
+        p = Process(target=module_for_retraining.train_model, args=(q, thread_id, from_pkl))
         p.start()
         global rec_alg
         rec_alg = q.get()
@@ -71,7 +71,7 @@ def main():
     from priority import hightpriority
     hightpriority()
     global rec_alg
-    rec_alg = RecommendationAlgorithm(from_pkl=False)
+    rec_alg = RecommendationAlgorithm(from_pkl=from_pkl)
     t = threading.Timer(5*60, train)
     t.start()
     # app.run()

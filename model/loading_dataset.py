@@ -14,8 +14,8 @@ __all__ = [
 
 VARIANTS = {
     '100k': {'rating_filename': 'u.data', 'sep': '\t'},
-    '20m': {'ratings': {'filename': 'ratings.csv', 'sep': ','},
-            'movies': {'filename': 'movies.csv', 'sep': ','}}
+    '20m': {'ratings': {'filename': 'ratings', 'sep': ','},
+            'movies': {'filename': 'movies', 'sep': ','}}
 }
 
 
@@ -45,34 +45,36 @@ def ml_movies_csv_to_df(movie_csv_path, variant):
 def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
     dirname = 'ml-' + variant
     ratings_filename = VARIANTS[variant]['ratings']['filename']
-    csv_path_ratings = os.path.join(data_dir_path, dirname, ratings_filename)
+    csv_path_ratings = os.path.join(data_dir_path, dirname, ratings_filename) + '.csv'
+    pkl_path_ratings = os.path.join(data_dir_path, dirname, ratings_filename) + '.pkl'
 
     movies_filename = VARIANTS[variant]['movies']['filename']
-    csv_path_movies = os.path.join(data_dir_path, dirname, movies_filename)
+    csv_path_movies = os.path.join(data_dir_path, dirname, movies_filename) + '.csv'
+    pkl_path_movies = os.path.join(data_dir_path, dirname, movies_filename) + '.pkl'
 
     zip_path = os.path.join(data_dir_path, dirname) + '.zip'
     url = 'http://files.grouplens.org/datasets/movielens/ml-' + variant + \
               '.zip'
 
     if target_df == "ratings" and os.path.exists(csv_path_ratings):
-        if not os.path.exists(csv_path_ratings + '.pkl'):
+        if not os.path.exists(pkl_path_ratings):
             print('read csv...')
             df = ml_ratings_csv_to_df(csv_path_ratings, variant)
             print('save csv.pkl...')
-            df.to_pickle(csv_path_ratings + '.pkl')
+            df.to_pickle(pkl_path_ratings)
         else:
             print('read csv.pkl...')
-            df = pd.read_pickle(csv_path_ratings + '.pkl')
+            df = pd.read_pickle(pkl_path_ratings)
         return df
     if target_df == "movies" and os.path.exists(csv_path_movies):
-        if not os.path.exists(csv_path_movies + '.pkl'):
+        if not os.path.exists(pkl_path_movies):
             print('read csv...')
             df = ml_movies_csv_to_df(csv_path_movies, variant)
             print('save csv.pkl...')
-            df.to_pickle(csv_path_movies + '.pkl')
+            df.to_pickle(pkl_path_movies)
         else:
             print('read csv.pkl...')
-            df = pd.read_pickle(csv_path_movies + '.pkl')
+            df = pd.read_pickle(pkl_path_movies)
         return df
 
     elif os.path.exists(zip_path):
