@@ -92,7 +92,7 @@ class RecommendationAlgorithm:
         rated_df = rated_df.loc[rated_df.u_id == user_id].sort_values(by='rating', ascending=False)
         return rated_df
 
-    def get_recommendation(self, user_id):
+    def get_recommendation(self, user_id, if_need_print_time = True):
         user_id = [user_id]
 
         now = time.time()
@@ -113,7 +113,8 @@ class RecommendationAlgorithm:
             merge(pd.DataFrame(recommendations).reset_index(drop=True), how='inner', left_on='i_id',
                   right_on='i_id'). \
             sort_values(by='prediction', ascending=False)
-        print('\nВремя алгоритма', time.time() - now)
+        if if_need_print_time:
+            print('\nВремя алгоритма', time.time() - now)
 
         return recommendations.head(20)
 
