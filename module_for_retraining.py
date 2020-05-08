@@ -5,6 +5,7 @@ from multiprocessing import Queue
 from priority import lowpriority
 import struct
 import tempfile
+import sys
 
 tmppath = '{}/{}'.format(tempfile.gettempdir(), 'flask-project')
 
