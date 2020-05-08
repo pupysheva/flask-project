@@ -83,7 +83,7 @@ print(time.time() - now)
 
 print(user_covarage, movie_covarage)
 
-file_covarage = open("./tests/covarage_result.txt", "w")
+file_covarage = open("./tests/covarage_result.log", "w")
 file_covarage.write("movies: "+str(movies)+"; movies_in_rec:"+str(movies_in_rec)+"\n")
 file_covarage.write("users: "+str(users)+"; users_in_rec:"+str(users_in_rec)+"\n")
 file_covarage.write("user_covarage: "+str(user_covarage)+"; movie_covarage:"+str(movie_covarage)+"\n")

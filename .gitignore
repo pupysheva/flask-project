@@ -16,3 +16,4 @@ venv.bak/
 *.pkl
 resources/ml-20m/*
 *.db
+*.log
