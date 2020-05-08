@@ -7,6 +7,7 @@ if '-h' in sys.argv:
 '''usage: ./start.py [-h|-pkl]
 -h:	this help.
 -pkl:	read and save via pkl files.
+-no-t:	do not run a first train.
 ''')
     exit()
 
@@ -86,7 +87,7 @@ def main():
     hightpriority()
     global rec_alg
     rec_alg = RecommendationAlgorithm(from_pkl=from_pkl)
-    t = threading.Timer(5*60, train)
+    t = threading.Timer(60*2*60 if '-no-t' in sys.argv else 5*60, train)
     t.start()
     # app.run()
 
