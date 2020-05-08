@@ -188,7 +188,7 @@ class SVD():
         predictions = [None] * len(Data)
 
         for i, (u_id, i_id) in enumerate(zip(Data['u_id'], Data['i_id'])):
-            predictions.append(self.predict_pair(u_id, i_id))
+            predictions[i] = self.predict_pair(u_id, i_id)
 
         return predictions
 
