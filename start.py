@@ -38,7 +38,7 @@ if not os.path.exists(tmppath):
     os.mkdir(tmppath)
 
 rec_alg = None
-from_pkl = '-pkl' in sys.argv
+from_pkl = True#'-pkl' in sys.argv
 
 @app.route('/get_recommendation/<int:user_id>', methods=["GET"])
 def get_recommendation(user_id):
@@ -88,10 +88,7 @@ def first_train():
     hightpriority()
     global rec_alg
     rec_alg = RecommendationAlgorithm(from_pkl=from_pkl)
-    t = threading.Timer(
-        60*2*60 if '-no-t' in sys.argv
-        else 0 if '-t' in sys.argv
-        else 5*60, train)
+    t = threading.Timer(5*60, train)
     t.start()
 
 first_train()
