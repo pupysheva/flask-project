@@ -5,9 +5,10 @@ import sys
 if '-h' in sys.argv:
     print(
 '''usage: ./start.py [-h|-pkl]
--h:	this help.
--pkl:	read and save via pkl files.
--no-t:	do not run a first train.
+-h	this help.
+-pkl	read and save via pkl files.
+-no-t	do not run a first train.
+-t	do first train and not wait.
 ''')
     exit()
 
@@ -16,6 +17,7 @@ import module_for_retraining
 
 from flask import Flask, render_template
 from multiprocessing import Process, Queue
+from priority import hightpriority
 
 
 import random
@@ -82,14 +84,16 @@ def train():
     train_model()
     threading.Timer(60*2*60, train).start()
 
-def main():
-    from priority import hightpriority
+def first_train():
     hightpriority()
     global rec_alg
     rec_alg = RecommendationAlgorithm(from_pkl=from_pkl)
-    t = threading.Timer(60*2*60 if '-no-t' in sys.argv else 5*60, train)
+    t = threading.Timer(
+        60*2*60 if '-no-t' in sys.argv
+        else 0 if '-t' in sys.argv
+        else 5*60, train)
     t.start()
-    # app.run()
 
-# if __name__ == '__main__':
-main()
+first_train()
+if __name__ == '__main__':
+    app.run(port=5000)
