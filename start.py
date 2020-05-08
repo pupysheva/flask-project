@@ -38,7 +38,7 @@ if not os.path.exists(tmppath):
     os.mkdir(tmppath)
 
 rec_alg = None
-from_pkl = True#'-pkl' in sys.argv
+from_pkl = '-pkl' in sys.argv
 
 @app.route('/get_recommendation/<int:user_id>', methods=["GET"])
 def get_recommendation(user_id):
