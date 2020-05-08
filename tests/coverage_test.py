@@ -76,7 +76,8 @@ user_with_rec = []
 # Расчёт охвата
 
 def calculate_coverage(users):
-    for user in users:
+    for ep, user in enumerate(users):
+        print(ep, " из ", len(users))
         recset = rec_alg.get_recommendation(user, data_with_user, movies_df)
         if not recset.empty:
             user_with_rec.append(user)

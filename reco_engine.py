@@ -18,11 +18,7 @@ class RecommendationAlgorithm:
         if from_pkl:
             print("read in PKL ...")
             now = time.time()
-            generate_if_need()
-            with open('resources/ml-20m/model_svd.pkl', 'rb') as f:
-                self.svd = pickle.load(f)
-            self.data_with_user = pd.read_pickle('resources/ml-20m/data_with_user.pkl')
-            self.movies_df = pd.read_pickle('resources/ml-20m/movies.pkl')
+            (self.data_with_user, self.movies_df, self.svd) = generate_if_need()
             print('\n Время чтения PKL файлов:', time.time() - now)
 
         else:
@@ -59,7 +55,7 @@ class RecommendationAlgorithm:
                 print('\nВремя соединения chunk`ов', time.time() - now_r)
                 self.data_with_user.drop(columns=['timestamp'], inplace=True)
 
-            self.svd = generate_if_need(movies_df=self.movies_df, data_with_user=self.data_with_user)
+            self.svd = generate_if_need(movies_df=self.movies_df, data_with_user=self.data_with_user)[2]
             print('\nВремя чтения BD:', time.time() - now)
     
     def save(self, engine, table_name, in_pkl=False, in_db=False):

@@ -27,9 +27,9 @@ class ProgressInFile:
         self.f.close()
 
 
-def train_model(q: Queue, id_thread: int):
+def train_model(q: Queue, id_thread: int, from_pkl):
     lowpriority()
-    ra = RecommendationAlgorithm(from_pkl=False)
+    ra = RecommendationAlgorithm(from_pkl=from_pkl)
     with ProgressInFile(id_thread) as f:
         ra.train_model(f)
     q.put(ra)
