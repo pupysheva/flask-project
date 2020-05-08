@@ -88,10 +88,7 @@ def first_train():
     hightpriority()
     global rec_alg
     rec_alg = RecommendationAlgorithm(from_pkl=from_pkl)
-    t = threading.Timer(
-        60*2*60 if '-no-t' in sys.argv
-        else 0 if '-t' in sys.argv
-        else 5*60, train)
+    t = threading.Timer(5*60, train)
     t.start()
 
 first_train()

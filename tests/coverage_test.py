@@ -75,10 +75,17 @@ def calculate_coverage(users):
 
     user_covarage = float(no_users_in_rec / no_users)
     movie_covarage = float(no_movies_in_rec / no_movies)
-    return user_covarage, movie_covarage
+    return no_movies, no_movies_in_rec, no_users, no_users_in_rec, user_covarage, movie_covarage
 
 now = time.time()
-user_covarage, movie_covarage = calculate_coverage(user_ids_list)
+movies, movies_in_rec, users, users_in_rec, user_covarage, movie_covarage = calculate_coverage(user_ids_list)
 print(time.time() - now)
 
 print(user_covarage, movie_covarage)
+
+file_covarage = open("./tests/covarage_result.txt", "w")
+file_covarage.write("movies: "+str(movies)+"; movies_in_rec:"+str(movies_in_rec)+"\n")
+file_covarage.write("users: "+str(users)+"; users_in_rec:"+str(users_in_rec)+"\n")
+file_covarage.write("user_covarage: "+str(user_covarage)+"; movie_covarage:"+str(movie_covarage)+"\n")
+
+file_covarage.close()
