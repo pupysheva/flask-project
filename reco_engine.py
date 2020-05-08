@@ -57,6 +57,7 @@ class RecommendationAlgorithm:
 
             self.svd = generate_if_need(movies_df=self.movies_df, data_with_user=self.data_with_user)[2]
             print('\nВремя чтения BD:', time.time() - now)
+        self.data_with_user_i_id_unique = self.data_with_user.i_id.unique()
     
     def save(self, engine, table_name, in_pkl=False, in_db=False):
         if in_pkl:
@@ -96,7 +97,7 @@ class RecommendationAlgorithm:
         user_id = [user_id]
 
         now = time.time()
-        all_movies = self.data_with_user.i_id.unique()
+        all_movies = self.data_with_user_i_id_unique
         recommendations = pd.DataFrame(list(product(user_id, all_movies)), columns=['u_id', 'i_id'])
 
         # Получение прогноза оценок для user_id
