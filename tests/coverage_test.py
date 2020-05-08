@@ -6,6 +6,10 @@ import time
 import sys
 sys.path.append('./')
 from reco_engine import RecommendationAlgorithm
+from multiprocessing import Pool
+import os
+import threading
+from datetime import datetime
 
 rec_alg = RecommendationAlgorithm(from_pkl=True)
 
@@ -13,37 +17,58 @@ rec_alg = RecommendationAlgorithm(from_pkl=True)
 # Получить список всех пользователей
 user_ids_list = rec_alg.data_with_user["u_id"].unique()
 print(len(user_ids_list))
-items_in_rec = {}
-user_with_rec = []
+g_items_in_rec = {}
+g_user_with_rec = []
+g_users = None
 
+lock = threading.Lock()
 
-# Расчёт охвата
-mean_time = 0
-def calculate_coverage(users):
+def pred_thread(id_thread):
+    global g_users
+    global g_user_with_rec
+    global g_items_in_rec
+    users = g_users
+    user_with_rec = []
+    items_in_rec = {}
+    now = time.time()
     for ep, user in enumerate(users):
-        now = time.time()
-        recset = rec_alg.get_recommendation(user, if_need_print_time=False)
-        if not recset.empty:
-            user_with_rec.append(user)
-            m_ids_rec = recset["i_id"].values
-            for rec in m_ids_rec:
-                if rec in items_in_rec:
-                    items_in_rec[rec] += 1
-                else:
-                    items_in_rec[rec] = 1
-        t = time.time() - now
-        global mean_time
-        mean_time += t
-        if ep % 10 == 0 and ep != 0 :
-            print(mean_time/10)
-            mean_time = 0
+        if ep % os.cpu_count() == id_thread:
+            recset = rec_alg.get_recommendation(user, if_need_print_time=False)
+            if not recset.empty:
+                user_with_rec.append(user)
+                for rec in recset["i_id"].values:
+                    if rec in items_in_rec:
+                        items_in_rec[rec] += 1
+                    else:
+                        items_in_rec[rec] = 1
 
-    print("items_in_rec", items_in_rec, len(items_in_rec.items()))
+            if ep % 100 == 99:
+                print(datetime.now(), (time.time() - now) / 100)
+                now = time.time()
+    lock.acquire()
+    print(time.time(), 'merge results by thread', id_thread)
+    g_user_with_rec.extend(user_with_rec)
+    for key, value in items_in_rec.items():
+        if key in g_items_in_rec:
+            g_items_in_rec[key] += value
+        else:
+            g_items_in_rec[key] = value
+    lock.release()
+
+def calculate_coverage(users):
+    global g_users
+    global g_user_with_rec
+    global g_items_in_rec
+    g_users = users
+    with Pool(os.cpu_count()) as p:
+        p.map(pred_thread, range(os.cpu_count()))
+
+    print("g_items_in_rec", g_items_in_rec, len(g_items_in_rec.items()))
     no_movies = 27278
-    no_movies_in_rec = len(items_in_rec.items())
+    no_movies_in_rec = len(g_items_in_rec.items())
 
     no_users = len(user_ids_list)
-    no_users_in_rec = len(user_with_rec)
+    no_users_in_rec = len(g_user_with_rec)
 
     print("no_movies_in_rec  ", no_movies_in_rec)
     print("no_users_in_rec ", no_users_in_rec)
