@@ -58,6 +58,7 @@ class RecommendationAlgorithm:
             self.svd = generate_if_need(movies_df=self.movies_df, data_with_user=self.data_with_user)[2]
             print('\nВремя чтения BD:', time.time() - now)
         self.data_with_user_i_id_unique = self.data_with_user.i_id.unique()
+        self.get_recommendation_cache = {}
     
     def save(self, engine, table_name, in_pkl=False, in_db=False):
         if in_pkl:
@@ -94,30 +95,29 @@ class RecommendationAlgorithm:
         return rated_df
 
     def get_recommendation(self, user_id, if_need_print_time = True):
-        user_id = [user_id]
-
         now = time.time()
-        all_movies = self.data_with_user_i_id_unique
-        recommendations = pd.DataFrame(list(product(user_id, all_movies)), columns=['u_id', 'i_id'])
+        if user_id not in self.get_recommendation_cache:
+            all_movies = self.data_with_user_i_id_unique
+            recommendations = pd.DataFrame(list(product([user_id], all_movies)), columns=['u_id', 'i_id'])
 
-        # Получение прогноза оценок для user_id
-        pred_train = self.svd.predict(recommendations)
-        recommendations['prediction'] = pred_train
+            # Получение прогноза оценок для user_id
+            pred_train = self.svd.predict(recommendations)
+            recommendations['prediction'] = pred_train
+            # sorted_user_predictions = recommendations.sort_values(by='prediction', ascending=False)
+            # print(sorted_user_predictions.head(10))
 
-        # sorted_user_predictions = recommendations.sort_values(by='prediction', ascending=False)
-        # print(sorted_user_predictions.head(10))
-
-        user_ratings = self.data_with_user[self.data_with_user.u_id == user_id[0]]
-        user_ratings.columns = ['u_id', 'i_id', 'rating']
-        # Топ 20 фильмов для рекомендации
-        recommendations = self.movies_df[~self.movies_df['i_id'].isin(user_ratings['i_id'])]. \
-            merge(pd.DataFrame(recommendations).reset_index(drop=True), how='inner', left_on='i_id',
-                  right_on='i_id'). \
-            sort_values(by='prediction', ascending=False)
+            user_ratings = self.data_with_user[self.data_with_user.u_id == user_id]
+            user_ratings.columns = ['u_id', 'i_id', 'rating']
+            # Топ 20 фильмов для рекомендации
+            recommendations = self.movies_df[~self.movies_df['i_id'].isin(user_ratings['i_id'])]. \
+                merge(pd.DataFrame(recommendations).reset_index(drop=True), how='inner', left_on='i_id',
+                      right_on='i_id'). \
+                sort_values(by='prediction', ascending=False)
+            self.get_recommendation_cache[user_id] = recommendations.head(20)
         if if_need_print_time:
             print('\nВремя алгоритма', time.time() - now)
 
-        return recommendations.head(20)
+        return self.get_recommendation_cache[user_id]
 
     def train_model(self, thread):
         print(datetime.now(), 'Start train...')
