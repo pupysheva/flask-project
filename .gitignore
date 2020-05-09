@@ -16,3 +16,5 @@ venv.bak/
 *.pkl
 resources/ml-20m/*
 *.db
+tests/cov_res
+tests/covarage_result.txt
