@@ -94,6 +94,7 @@ def first_train():
         else 5*60, train)
     t.start()
 
-first_train()
+if __name__ != '__mp_main__':
+    first_train()
 if __name__ == '__main__':
     app.run(port=5000)
