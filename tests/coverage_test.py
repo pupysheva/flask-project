@@ -63,24 +63,24 @@ def calculate_coverage(users):
     print("no_movies_in_rec  ", no_movies_in_rec)
     print("no_users_in_rec ", no_users_in_rec)
 
-    user_covarage = float(no_users_in_rec / no_users)
-    movie_covarage = float(no_movies_in_rec / no_movies)
-    return no_movies, no_movies_in_rec, no_users, no_users_in_rec, user_covarage, movie_covarage
+    user_coverage = float(no_users_in_rec / no_users)
+    movie_coverage = float(no_movies_in_rec / no_movies)
+    return no_movies, no_movies_in_rec, no_users, no_users_in_rec, user_coverage, movie_coverage
 
 def main():
     init()
     now = time.time()
-    movies, movies_in_rec, users, users_in_rec, user_covarage, movie_covarage = calculate_coverage(g_user_ids_list)
+    movies, movies_in_rec, users, users_in_rec, user_coverage, movie_coverage = calculate_coverage(g_user_ids_list)
     print(time.time() - now)
 
-    print(user_covarage, movie_covarage)
+    print(user_coverage, movie_coverage)
 
-    file_covarage = open("./tests/covarage_result.log", "w")
-    file_covarage.write("movies: "+str(movies)+"; movies_in_rec:"+str(movies_in_rec)+"\n")
-    file_covarage.write("users: "+str(users)+"; users_in_rec:"+str(users_in_rec)+"\n")
-    file_covarage.write("user_covarage: "+str(user_covarage)+"; movie_covarage:"+str(movie_covarage)+"\n")
+    file_coverage = open("./tests/coverage_result.log", "w")
+    file_coverage.write("movies: "+str(movies)+"; movies_in_rec:"+str(movies_in_rec)+"\n")
+    file_coverage.write("users: "+str(users)+"; users_in_rec:"+str(users_in_rec)+"\n")
+    file_coverage.write("user_coverage: "+str(user_coverage)+"; movie_coverage:"+str(movie_coverage)+"\n")
 
-    file_covarage.close()
+    file_coverage.close()
 
 if __name__ == "__main__":
     main()
