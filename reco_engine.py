@@ -134,6 +134,11 @@ class RecommendationAlgorithm:
         test_user = self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())')
 
+        print("ТЕСТ НА ДЕЛЕНИЕ НА ВЫБОРКИ!!!!!!!!!!")
+        print(len(np.unique(self.data_with_user["u_id"])))
+        print(len(np.unique(train_user["u_id"])))
+        print(len(np.unique(test_user["u_id"])))
+
         lr, reg, factors = (0.02, 0.016, 64)
         epochs = 10  # epochs = 50
 
