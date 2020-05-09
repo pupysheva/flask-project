@@ -21,7 +21,7 @@ g_items_in_rec = {}
 g_user_with_rec = []
 g_users = None
 
-lock = threading.Lock()
+locks = [threading.Lock(), threading.Lock()]
 
 def pred_thread(id_thread):
     global g_users
@@ -41,19 +41,31 @@ def pred_thread(id_thread):
                         items_in_rec[rec] += 1
                     else:
                         items_in_rec[rec] = 1
-
             if ep % 100 == 99:
                 print(datetime.now(), (time.time() - now) / 100)
                 now = time.time()
-    lock.acquire()
-    print(time.time(), 'merge results by thread', id_thread)
-    g_user_with_rec.extend(user_with_rec)
-    for key, value in items_in_rec.items():
-        if key in g_items_in_rec:
-            g_items_in_rec[key] += value
-        else:
-            g_items_in_rec[key] = value
-    lock.release()
+    print(datetime.now(), 'start merge by thread', id_thread)
+    lock_ok = [False, False]
+    while not (lock_ok[0] and lock_ok[1]):
+        if not lock_ok[0]:
+            lock_ok[0] = locks[0].acquire(False)
+            if lock_ok[0]:
+                print(datetime.now(), 'merge results to g_user_with_rec by thread', id_thread)
+                g_user_with_rec.extend(user_with_rec)
+                locks[0].release()
+        if not lock_ok[1]:
+            lock_ok[1] = locks[1].acquire(False)
+            if lock_ok[1]:
+                print(datetime.now(), 'merge results to g_items_in_rec by thread', id_thread)
+                for key, value in items_in_rec.items():
+                    if key in g_items_in_rec:
+                        g_items_in_rec[key] += value
+                    else:
+                        g_items_in_rec[key] = value
+                locks[1].release()
+        if not (lock_ok[0] and lock_ok[1]):
+            time.sleep(0.01)
+    print(datetime.now(), 'finish thread', id_thread)
 
 def calculate_coverage(users):
     global g_users
