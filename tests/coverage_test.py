@@ -11,13 +11,6 @@ import os
 import threading
 from datetime import datetime
 
-g_rec_alg = None
-g_user_ids_list = None
-g_items_in_rec = None
-g_user_with_rec = None
-g_users = None
-g_locks = None
-
 def init():
     global g_rec_alg
     global g_user_ids_list
