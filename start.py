@@ -4,7 +4,7 @@ import sys
 
 if '-h' in sys.argv:
     print(
-'''usage: ./start.py [-h|-pkl]
+'''usage: python start.py [-h|-pkl|-no-t|-t]
 -h	this help.
 -pkl	read and save via pkl files.
 -no-t	do not run a first train.
@@ -38,6 +38,7 @@ if not os.path.exists(tmppath):
     os.mkdir(tmppath)
 
 rec_alg = None
+# Для запуска pkl в PyCharm читать http://prog.tversu.ru/pr1/configurations.pdf
 from_pkl = '-pkl' in sys.argv
 
 @app.route('/get_recommendation/<int:user_id>', methods=["GET"])
@@ -88,13 +89,20 @@ def first_train():
     hightpriority()
     global rec_alg
     rec_alg = RecommendationAlgorithm(from_pkl=from_pkl)
+    # Для управления таймером в PyCharm читать http://prog.tversu.ru/pr1/configurations.pdf
     t = threading.Timer(
         60*2*60 if '-no-t' in sys.argv
         else 0 if '-t' in sys.argv
         else 5*60, train)
     t.start()
 
+# При создании новых потоков в режиме spawn (Microsoft Windows),
+# новые потоки выполняют инициализацию кода с флагом __name__ = '__mp_main__'.
+# Надо запускать обучение только в том случае, если данный процесс
+# является основным, то есть не является новым мульти-потоком mp (multiprocessing).
 if __name__ != '__mp_main__':
     first_train()
+# Запускать Flask надо только в том случае, если скрипт был запущен напрямую.
+# Если скрипт запущен через Flask, то Flask запускать не нужно, он уже запущен.
 if __name__ == '__main__':
     app.run(port=5000)
