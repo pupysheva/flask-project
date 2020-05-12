@@ -9,6 +9,15 @@ from .fast_methods import _run_epoch
 from .fast_methods import _shuffle
 from .utils import timer
 
+CUDA = False
+try:
+    import skcuda.linalg as linalg
+    import skcuda.misc as misc
+    CUDA = True
+except ModuleNotFoundError:
+    print('''WARNING: Cuda not found!
+WARNING: Please, install Cuda pip:
+WARNING: pip install scikit-cuda''')
 
 class SVD():
     """Реализация алгоритма Simon Funk SVD 
@@ -168,7 +177,10 @@ class SVD():
             pred += self.movie_deviations[i_ix]
 
         if is_user_known and is_item_known:
-            pred += np.dot(self.user_embeddings[u_ix], self.movie_embeddings[i_ix])
+            if CUDA:
+                ?
+            else:
+                pred += np.dot(self.user_embeddings[u_ix], self.movie_embeddings[i_ix])
 
         if clip:
             pred = self.max_rating if pred > self.max_rating else pred
