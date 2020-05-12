@@ -167,7 +167,7 @@ class SVD():
             i_ix = self.item_dict[i_id]
             pred += self.movie_deviations[i_ix]
 
-        if  is_user_known and is_item_known:
+        if is_user_known and is_item_known:
             pred += np.dot(self.user_embeddings[u_ix], self.movie_embeddings[i_ix])
 
         if clip:
@@ -228,9 +228,11 @@ class SVD():
             val_mae (float): validation mae
         """
         end = time.time()
-
-        print('val_loss: {:.3f}'.format(val_loss), end=' - ')
-        print('val_rmse: {:.3f}'.format(val_rmse), end=' - ')
-        print('val_mae: {:.3f}'.format(val_mae), end=' - ')
+        if val_loss != None:
+            print('val_loss: {:.3f}'.format(val_loss), end=' - ')
+        if val_rmse != None:
+            print('val_rmse: {:.3f}'.format(val_rmse), end=' - ')
+        if val_mae != None:
+            print('val_mae: {:.3f}'.format(val_mae), end=' - ')
 
         print('took {:.1f} sec'.format(end - start))

@@ -9,3 +9,9 @@ $ FLASK_APP=start.py flask run
 ```
 $ python ./tests/coverage_test.py
 ```
+
+
+запуск теста "Метрики"
+```
+$ python ./tests/metrics_test.py
+```
