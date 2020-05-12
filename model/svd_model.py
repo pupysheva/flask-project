@@ -145,7 +145,7 @@ class SVD():
 
         return self
 
-    def predict_pair(self, u_id, i_id, clip=False):#clip=True):
+    def predict_pair(self, u_id, i_id, isInUsers, clip=False):#clip=True):
         """Возвращает прогноз рейтинга модели для данной пары пользователь - элемент.
         Args:
             u_id (int): идентификатор пользователя
@@ -157,7 +157,7 @@ class SVD():
         is_user_known, is_item_known = False, False
         pred = self.global_mean
 
-        if u_id in self.user_dict:
+        if isInUsers:
             is_user_known = True
             u_ix = self.user_dict[u_id]
             pred += self.user_deviations[u_ix]
@@ -187,8 +187,10 @@ class SVD():
         """
         predictions = []
 
+        isInUsers = Data['u_id'][0] in self.user_dict
+
         for u_id, i_id in zip(Data['u_id'], Data['i_id']):
-            predictions.append(self.predict_pair(u_id, i_id))
+            predictions.append(self.predict_pair(u_id, i_id, isInUsers))
 
         return predictions
 
