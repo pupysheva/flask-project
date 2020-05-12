@@ -44,17 +44,9 @@ class SVD():
         Returns:
             Data (numpy array): сопоставленный набор данных
         """
-        Data = Data.copy()
-
         if is_training:
-            u_ids = Data['u_id'].unique().tolist()
-            i_ids = Data['i_id'].unique().tolist()
-
-            self.user_dict = dict(zip(u_ids, [i for i in range(len(u_ids))]))
-            self.item_dict = dict(zip(i_ids, [i for i in range(len(i_ids))]))
-
-        Data['u_id'] = Data['u_id'].map(self.user_dict)
-        Data['i_id'] = Data['i_id'].map(self.item_dict)
+            self.user_set = set(Data['u_id'])
+            self.item_set = set(Data['i_id'])
 
         # Tag unknown users/items with -1 (when val)
         Data.fillna(-1, inplace=True)
@@ -121,6 +113,7 @@ class SVD():
         Args:
             Data (pandas DataFrame): обучающий набор, должен иметь столбец `u_id` для идентификатора пользователя,
                 столбец «i_id» для идентификатора элемента и «rating».
+                В процессе выполнения Data изменится.
             Data_val (pandas DataFrame, defaults to `None`): валидационный набор данных
             early_stopping (boolean): стоит ли прекратить обучение на основе вычисления ошибок на валидационной выборке
             shuffle (boolean): стоит ли перемешивать данные перед каждой эпохой.
@@ -159,16 +152,14 @@ class SVD():
 
         if isInUsers:
             is_user_known = True
-            u_ix = self.user_dict[u_id]
-            pred += self.user_deviations[u_ix]
+            pred += self.user_deviations[u_id]
 
-        if i_id in self.item_dict:
+        if i_id in self.item_set:
             is_item_known = True
-            i_ix = self.item_dict[i_id]
-            pred += self.movie_deviations[i_ix]
+            pred += self.movie_deviations[i_id]
 
         if is_user_known and is_item_known:
-            pred += np.dot(self.user_embeddings[u_ix], self.movie_embeddings[i_ix])
+            pred += np.dot(self.user_embeddings[u_id], self.movie_embeddings[i_id])
 
         if clip:
             pred = self.max_rating if pred > self.max_rating else pred
@@ -187,7 +178,7 @@ class SVD():
         """
         predictions = []
 
-        isInUsers = Data['u_id'][0] in self.user_dict
+        isInUsers = Data['u_id'][0] in self.user_set
 
         for u_id, i_id in zip(Data['u_id'], Data['i_id']):
             predictions.append(self.predict_pair(u_id, i_id, isInUsers))
