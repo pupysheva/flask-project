@@ -24,8 +24,8 @@ def _initialization(n_user, n_item, n_factors):
         user_deviations (numpy array): вектор смециений пользователей
         movie_deviations (numpy array): вектор смециений элемнетов
     """
-    user_embeddings = np.random.normal(0, .1, (n_user, n_factors))
-    movie_embeddings = np.random.normal(0, .1, (n_item, n_factors))
+    user_embeddings = np.random.normal(0, .01, (n_user, n_factors))
+    movie_embeddings = np.random.normal(0, .01, (n_item, n_factors))
 
     user_deviations = np.zeros(n_user)
     movie_deviations = np.zeros(n_item)

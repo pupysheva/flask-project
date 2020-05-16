@@ -117,6 +117,7 @@ class RecommendationAlgorithm:
         if if_need_print_time:
             print('\nВремя алгоритма', time.time() - now)
 
+
         return recommendations.head(20)
 
     def train_model(self, thread):
@@ -124,23 +125,22 @@ class RecommendationAlgorithm:
         thread.set_progress(0.01)
         print(datetime.now(), 'Progress set 0.01.')
 
-        test_user = 0
-        train_user = self.data_with_user.sample(frac=0.8)
+        self.train_user = self.data_with_user.sample(frac=0.8)
         thread.set_progress(0.09)
         print(datetime.now(), 'self.data_with_user.sample(frac=0.8)')
-        val_user = self.data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)
+        self.val_user = self.data_with_user.drop(self.train_user.index.tolist()).sample(frac=0.5, random_state=8)
         thread.set_progress(0.19)
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)')
-        test_user = self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())
+        self.test_user = self.data_with_user.drop(self.train_user.index.tolist()).drop(self.val_user.index.tolist())
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())')
 
         print("ТЕСТ НА ДЕЛЕНИЕ НА ВЫБОРКИ!!!!!!!!!!")
         print(len(np.unique(self.data_with_user["u_id"])))
-        print(len(np.unique(train_user["u_id"])))
-        print(len(np.unique(test_user["u_id"])))
+        print(len(np.unique(self.train_user["u_id"])))
+        print(len(np.unique(self.test_user["u_id"])))
 
-        lr, reg, factors = (0.02, 0.016, 64)
-        epochs = 10  # epochs = 50
+        lr, reg, factors = (0.02, 0.02, 64) #64(0.01, 0.02, 100)  (0.02, 0.016, 100)
+        epochs = 10
 
         thread.set_progress(0.25)
         print(datetime.now(), 'start SVD create')
@@ -149,15 +149,15 @@ class RecommendationAlgorithm:
         print(datetime.now(), 'finish SVD create. Start fit...')
 
         thread.set_progress(0.50)
-        svd.fit(Data=train_user, Data_val=val_user, early_stopping=False, shuffle=False, progress=lambda p: thread.set_progress(p * 0.25 + 0.50))  # early_stopping=True
+        svd.fit(Data=self.train_user, Data_val=self.val_user, early_stopping=False, shuffle=False, progress=lambda p: thread.set_progress(p * 0.25 + 0.50))  # early_stopping=True
         print(datetime.now(), 'finish svd.fit. Start predict')
 
         thread.set_progress(0.75)
-        pred = svd.predict(test_user)
+        pred = svd.predict(self.test_user)
         print(datetime.now(), 'finish svd.predict. Start mean and sqrt')
         thread.set_progress(0.99)
-        mae = mean_absolute_error(test_user["rating"], pred)
-        rmse = np.sqrt(mean_squared_error(test_user["rating"], pred))
+        mae = mean_absolute_error(self.test_user["rating"], pred)
+        rmse = np.sqrt(mean_squared_error(self.test_user["rating"], pred))
         print(datetime.now(), 'finish print results...')
         print("Test MAE:  {:.2f}".format(mae))
         print("Test RMSE: {:.2f}".format(rmse))
