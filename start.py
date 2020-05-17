@@ -42,12 +42,23 @@ from_pkl = '-pkl' in sys.argv
 
 @app.route('/get_recommendation/<int:user_id>', methods=["GET"])
 def get_recommendation(user_id):
-    past = time.time()
+    now = time.time()
     global rec_alg
     recommendations = rec_alg.get_recommendation(user_id)
     return render_template('main.html',  tables=[recommendations.to_html(classes='data', index=False)],
                            titles=recommendations.columns.values,
-                           time=(time.time() - past))
+                           time=(time.time() - now))
+
+
+@app.route('/rated_by_user/<int:user_id>', methods=["GET"])
+def rated_by_user(user_id):
+    now = time.time()
+    global rec_alg
+    rated_by_user = rec_alg.get_films_rated_by_user(user_id)
+    return render_template('main.html',  tables=[rated_by_user.to_html(classes='data', index=False)],
+                           titles=rated_by_user.columns.values,
+                           time=(time.time() - now))
+
 
 @app.route('/train', methods=["POST"])
 def train_model():

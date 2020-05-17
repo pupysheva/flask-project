@@ -65,39 +65,71 @@ def create_or_load_dfs(variant, data_with_user, movies_df, data_with_user_filena
 
 def create_data_with_user(df, movies_df, data_with_user_filename):
     model = df.copy()
-    #  Инициализация пользователя 0
-    n_m = len(model.i_id.unique())
-    my_ratings = np.zeros(n_m)
-    my_ratings[4993] = 5
-    my_ratings[1080] = 5
-    my_ratings[260] = 5
-    my_ratings[4896] = 5
-    my_ratings[1196] = 5
-    my_ratings[1210] = 5
-    my_ratings[2628] = 5
-    my_ratings[5378] = 5
-    print('User ratings:')
-    print('-----------------')
-    for i, val in enumerate(my_ratings):
-        if val > 0:
-            print('Rated %d stars: %s' %
-                  (val, movies_df.loc[movies_df.i_id == i].title.values))
-    print("Adding your recommendations!")
-    items_id = [item[0] for item in np.argwhere(my_ratings > 0)]
-    ratings_list = my_ratings[np.where(my_ratings > 0)]
-    user_id = np.asarray([0] * len(ratings_list))
+    # #  Инициализация пользователя 0
+    # n_m = len(model.i_id.unique())
+    # my_ratings = np.zeros(n_m)
+    # my_ratings[4993] = 5
+    # my_ratings[1080] = 5
+    # my_ratings[260] = 5
+    # my_ratings[4896] = 5
+    # my_ratings[1196] = 5
+    # my_ratings[1210] = 5
+    # my_ratings[2628] = 5
+    # my_ratings[5378] = 5
+    # print('User ratings:')
+    # print('-----------------')
+    # for i, val in enumerate(my_ratings):
+    #     if val > 0:
+    #         print('Rated %d stars: %s' %
+    #               (val, movies_df.loc[movies_df.i_id == i].title.values))
+    # print("Adding your recommendations!")
+    # items_id = [item[0] for item in np.argwhere(my_ratings > 0)]
+    # ratings_list = my_ratings[np.where(my_ratings > 0)]
+    # user_id = np.asarray([0] * len(ratings_list))
+    #
+    # user_ratings = pd.DataFrame(
+    #     list(zip(user_id, items_id, ratings_list)), columns=['u_id', 'i_id', 'rating'])
+    # try:
+    #     model = model.drop(columns=['timestamp'])
+    # except:
+    #     pass
+    # data_with_user = model.append(user_ratings, ignore_index=True)
+    #
+    # now = time.time()
+    # data_with_user.to_pickle(data_with_user_filename)
+    # print('\n', time.time() - now)
+    # Create an empty dictionary.
+    my_ratings = {}
+    print("TEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
+    # Fill the dictionary, pair by pair.
+    my_ratings[920] = 5
+    my_ratings[1721] = 5
+    my_ratings[47382] = 4
+    my_ratings[7669] = 5
+    my_ratings[4246] = 5
+    my_ratings[55052] = 5
+    my_ratings[8969] = 5
+    my_ratings[41569] = 5
+    my_ratings[6373] = 1
+    my_ratings[1485] = 1
+    my_ratings[7361] = 2
+    my_ratings[64969] = 1
+    my_ratings[19] = 1
 
-    user_ratings = pd.DataFrame(
-        list(zip(user_id, items_id, ratings_list)), columns=['u_id', 'i_id', 'rating'])
+    for i, val in my_ratings.items():
+        print('Rated %d %d stars: %s' % (val, i, movies_df.loc[movies_df.i_id == i].title.values))
+
+    print("Adding your recommendations!")
+    items_id = list(my_ratings.keys())
+    ratings_list = list(my_ratings.values())
+    user_id = np.asarray([0] * len(ratings_list))
+    user_ratings = pd.DataFrame(list(zip(user_id, items_id, ratings_list)), columns=['u_id', 'i_id', 'rating'])
+
     try:
         model = model.drop(columns=['timestamp'])
     except:
         pass
     data_with_user = model.append(user_ratings, ignore_index=True)
-
-    now = time.time()
-    data_with_user.to_pickle(data_with_user_filename)
-    print('\n', time.time() - now)
     return data_with_user
 
 def generate_if_need(path='./resources', svd=None, movies_df=None, data_with_user=None):

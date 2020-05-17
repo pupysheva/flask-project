@@ -106,7 +106,8 @@ class RecommendationAlgorithm:
             pred_train = self.svd.predict(recommendations)
             recommendations['prediction'] = pred_train
 
-            user_ratings = self.train_data[self.train_data.u_id == user_id[0]] #self.data_with_user[self.data_with_user.u_id == user_id[0]]
+            user_ratings = self.data_with_user[self.data_with_user.u_id == user_id[0]] #user_ratings = self.data_with_user[self.data_with_user.u_id == user_id[0]]
+
             user_ratings.columns = ['u_id', 'i_id', 'rating']
             # Топ 20 фильмов для рекомендации
             recommendations = self.movies_df[~self.movies_df['i_id'].isin(user_ratings['i_id'])]. \
