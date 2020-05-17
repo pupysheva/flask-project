@@ -94,7 +94,7 @@ class RecommendationAlgorithm:
         rated_df = rated_df.loc[rated_df.u_id == user_id].sort_values(by='rating', ascending=False)
         return rated_df
 
-    def get_recommendation(self, user_id, if_need_print_time = True):
+    def get_recommendation(self, user_id, if_need_print_time=True):
         if user_id in self.data_with_user_u_id_unique:
             user_id = [user_id]
 
@@ -119,16 +119,16 @@ class RecommendationAlgorithm:
         else:
             return pd.DataFrame()
 
-    def train_model(self, thread=None, if_progress_need=True):
+    def train_model(self, thread=None):
         print(datetime.now(), 'Start train...')
-        if if_progress_need: thread.set_progress(0.01)
+        if thread is not None: thread.set_progress(0.01)
         print(datetime.now(), 'Progress set 0.01.')
 
         self.train_data = self.data_with_user.sample(frac=0.8)
-        if if_progress_need: thread.set_progress(0.09)
+        if thread is not None: thread.set_progress(0.09)
         print(datetime.now(), 'self.data_with_user.sample(frac=0.8)')
         self.val_data = self.data_with_user.drop(self.train_data.index.tolist()).sample(frac=0.5, random_state=8)
-        if if_progress_need: thread.set_progress(0.19)
+        if thread is not None: thread.set_progress(0.19)
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)')
         self.test_data = self.data_with_user.drop(self.train_data.index.tolist()).drop(self.val_data.index.tolist())
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())')
@@ -141,24 +141,24 @@ class RecommendationAlgorithm:
         lr, reg, factors = (0.02, 0.02, 64) #64(0.01, 0.02, 100)  (0.02, 0.016, 100)
         epochs = 10
 
-        if if_progress_need: thread.set_progress(0.25)
+        if thread is not None: thread.set_progress(0.25)
         print(datetime.now(), 'start SVD create')
         svd = SVD(learning_rate=lr, regularization=reg, n_epochs=epochs, n_factors=factors,
                   min_rating=0.5, max_rating=5)
         print(datetime.now(), 'finish SVD create. Start fit...')
 
-        if if_progress_need:
+        if thread is not None:
             thread.set_progress(0.50)
             svd.fit(Data=self.train_data, Data_val=self.val_data, early_stopping=False, shuffle=False, progress=lambda p: thread.set_progress(p * 0.25 + 0.50))  # early_stopping=True
         else:
-            svd.fit(Data=self.train_data, Data_val=self.val_data, early_stopping=False, shuffle=False)  # early_stopping=True
+            svd.fit(Data=self.train_data, Data_val=self.val_data, early_stopping=False, shuffle=False)
 
         print(datetime.now(), 'finish svd.fit. Start predict')
 
-        if if_progress_need: thread.set_progress(0.75)
+        if thread is not None: thread.set_progress(0.75)
         pred = svd.predict(self.test_data)
         print(datetime.now(), 'finish svd.predict. Start mean and sqrt')
-        if if_progress_need: thread.set_progress(0.99)
+        if thread is not None: thread.set_progress(0.99)
         mae = mean_absolute_error(self.test_data["rating"], pred)
         rmse = np.sqrt(mean_squared_error(self.test_data["rating"], pred))
         print(datetime.now(), 'finish print results...')
@@ -167,4 +167,4 @@ class RecommendationAlgorithm:
         print('{} factors, {} lr, {} reg'.format(factors, lr, reg))
 
         self.svd = svd
-        if if_progress_need: thread.set_progress(1.00)
+        if thread is not None: thread.set_progress(1.00)

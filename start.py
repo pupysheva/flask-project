@@ -21,7 +21,6 @@ from priority import hightpriority
 
 
 import random
-import struct
 import tempfile
 import threading
 import time

@@ -4,11 +4,13 @@ import numpy as np
 import pandas as pd
 import time
 import sys
-sys.path.append('./')
-from reco_engine import RecommendationAlgorithm
 import os
 from datetime import datetime
 from multiprocessing import Process, Queue
+sys.path.append('./')
+from reco_engine import RecommendationAlgorithm
+
+
 
 def init():
     global g_rec_alg
@@ -18,16 +20,17 @@ def init():
     g_user_ids_list = g_rec_alg.data_with_user["u_id"].unique()
     print(len(g_user_ids_list))
 
+
 def pred_thread(rec_alg, users, queue, id_thread):
     user_with_rec = []
     items_in_rec = {}
     now = time.time()
     for ep, user in enumerate(users):
         if ep % os.cpu_count() == id_thread:
-            recset = rec_alg.get_recommendation(user, if_need_print_time=False)
-            if not recset.empty:
+            rec_set = rec_alg.get_recommendation(user, if_need_print_time=False)
+            if not rec_set.empty:
                 user_with_rec.append(user)
-                for rec in recset["i_id"].values:
+                for rec in rec_set["i_id"].values:
                     if rec in items_in_rec:
                         items_in_rec[rec] += 1
                     else:
@@ -37,6 +40,7 @@ def pred_thread(rec_alg, users, queue, id_thread):
                 now = time.time()
     print(datetime.now(), 'finish tread', id_thread)
     queue.put((user_with_rec, items_in_rec))
+
 
 def calculate_coverage(users):
     g_items_in_rec = {}
@@ -67,6 +71,7 @@ def calculate_coverage(users):
     movie_coverage = float(no_movies_in_rec / no_movies)
     return no_movies, no_movies_in_rec, no_users, no_users_in_rec, user_coverage, movie_coverage
 
+
 def main():
     init()
     now = time.time()
@@ -81,6 +86,7 @@ def main():
     file_coverage.write("user_coverage: "+str(user_coverage)+"; movie_coverage:"+str(movie_coverage)+"\n")
 
     file_coverage.close()
+
 
 if __name__ == "__main__":
     main()

@@ -40,7 +40,7 @@ print(len(np.unique(test_data["i_id"])), " - Число фильмов в тес
 
 
 lr, reg, factors = (0.008, 0.008, 64)
-epochs = 30
+epochs = 12
 print(datetime.now(), 'start SVD create')
 svd = SVD(learning_rate=lr, regularization=reg, n_epochs=epochs, n_factors=factors,
                   min_rating=0.5, max_rating=5)

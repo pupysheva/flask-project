@@ -1,19 +1,19 @@
 #!/usr/bin/python
 # utf-8
 import numpy as np
-import pandas as pd
 import time
 import sys
-sys.path.append('./')
-from reco_engine import RecommendationAlgorithm
 import os
 from datetime import datetime
 from multiprocessing import Process, Queue
+sys.path.append('./')
+from reco_engine import RecommendationAlgorithm
+
 
 def init():
     global g_rec_alg
     g_rec_alg = RecommendationAlgorithm(from_pkl=True)
-    g_rec_alg.train_model(if_progress_need = False)
+    g_rec_alg.train_model()
 
     # Получить список всех пользователей
     global g_user_ids_list_for_ped
