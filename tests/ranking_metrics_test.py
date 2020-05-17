@@ -11,20 +11,18 @@ from datetime import datetime
 from multiprocessing import Process, Queue
 
 def init():
-    global g_rec_alg
     g_rec_alg = RecommendationAlgorithm(from_pkl=True)
     g_rec_alg.train_model(if_progress_need = False)
 
     # Получить список всех пользователей
-    global g_user_ids_list_for_ped
     g_user_ids_list_for_ped = g_rec_alg.test_data["u_id"].unique()
     print(len(g_user_ids_list_for_ped))
 
 
-    global mean_rating_users
     # средние оценки по юзерам
     mean_rating_users = g_rec_alg.train_data.groupby(['u_id'], as_index=False)['rating'].mean()
 
+    return (g_rec_alg, g_user_ids_list_for_ped, mean_rating_users)
 
 
 def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id_thread):
@@ -54,7 +52,7 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id
     print(datetime.now(), 'finish tread', id_thread)
     queue.put((precision, recall))
 
-def calculate_precision_recall(g_user_ids_list_for_ped, mean_rating_users):
+def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users):
     q = Queue()
     g_pres_list = []
     g_recall_list = []
@@ -74,9 +72,9 @@ def calculate_precision_recall(g_user_ids_list_for_ped, mean_rating_users):
 
 def main():
     print("Количество потоков ", os.cpu_count())
-    init()
+    (g_rec_alg, g_user_ids_list_for_ped, mean_rating_users) = init()
     now = time.time()
-    precision, recall = calculate_precision_recall(g_user_ids_list_for_ped, mean_rating_users)
+    precision, recall = calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users)
     print(time.time() - now)
 
     print(precision, recall)
