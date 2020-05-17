@@ -65,21 +65,21 @@ def train_model():
     th.start()
     return str(thread_id)
 
-@app.route('/progress/<int:thread_id>')
-def progress(thread_id):
-    filename = tmppath + '/thread_' + str(thread_id)
-    if os.path.exists(filename):
-        with open(filename, 'rb+') as f:
-            bytes = f.read(4)
-            if len(bytes) >= 4:
-                data = str(struct.unpack('f', bytes)[0])
-            else:
-                data = 0
-        if data == 1:
-            os.remove(filename)
-    else:
-        data = 0
-    return str(data)
+# @app.route('/progress/<int:thread_id>')
+# def progress(thread_id):
+#     filename = tmppath + '/thread_' + str(thread_id)
+#     if os.path.exists(filename):
+#         with open(filename, 'rb+') as f:
+#             bytes = f.read(4)
+#             if len(bytes) >= 4:
+#                 data = str(struct.unpack('f', bytes)[0])
+#             else:
+#                 data = 0
+#         if data == 1:
+#             os.remove(filename)
+#     else:
+#         data = 0
+#     return str(data)
 
 def train():
     train_model()

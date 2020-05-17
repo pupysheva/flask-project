@@ -58,6 +58,7 @@ class RecommendationAlgorithm:
             self.svd = generate_if_need(movies_df=self.movies_df, data_with_user=self.data_with_user)[2]
             print('\nВремя чтения BD:', time.time() - now)
         self.data_with_user_i_id_unique = self.data_with_user.i_id.unique()
+        self.data_with_user_u_id_unique = self.data_with_user.u_id.unique()
     
     def save(self, engine, table_name, in_pkl=False, in_db=False):
         if in_pkl:
@@ -94,74 +95,76 @@ class RecommendationAlgorithm:
         return rated_df
 
     def get_recommendation(self, user_id, if_need_print_time = True):
-        user_id = [user_id]
+        if user_id in self.data_with_user_u_id_unique:
+            user_id = [user_id]
 
-        now = time.time()
-        all_movies = self.data_with_user_i_id_unique
-        recommendations = pd.DataFrame(list(product(user_id, all_movies)), columns=['u_id', 'i_id'])
+            now = time.time()
+            all_movies = self.data_with_user_i_id_unique
+            recommendations = pd.DataFrame(list(product(user_id, all_movies)), columns=['u_id', 'i_id'])
 
-        # Получение прогноза оценок для user_id
-        pred_train = self.svd.predict(recommendations)
-        recommendations['prediction'] = pred_train
+            # Получение прогноза оценок для user_id
+            pred_train = self.svd.predict(recommendations)
+            recommendations['prediction'] = pred_train
 
-        # sorted_user_predictions = recommendations.sort_values(by='prediction', ascending=False)
-        # print(sorted_user_predictions.head(10))
+            user_ratings = self.train_data[self.train_data.u_id == user_id[0]] #self.data_with_user[self.data_with_user.u_id == user_id[0]]
+            user_ratings.columns = ['u_id', 'i_id', 'rating']
+            # Топ 20 фильмов для рекомендации
+            recommendations = self.movies_df[~self.movies_df['i_id'].isin(user_ratings['i_id'])]. \
+                merge(pd.DataFrame(recommendations).reset_index(drop=True), how='inner', left_on='i_id',
+                      right_on='i_id'). \
+                sort_values(by='prediction', ascending=False)
+            if if_need_print_time:
+                print('\nВремя алгоритма', time.time() - now)
+            return recommendations.head(20)
+        else:
+            return pd.DataFrame()
 
-        user_ratings = self.data_with_user[self.data_with_user.u_id == user_id[0]]
-        user_ratings.columns = ['u_id', 'i_id', 'rating']
-        # Топ 20 фильмов для рекомендации
-        recommendations = self.movies_df[~self.movies_df['i_id'].isin(user_ratings['i_id'])]. \
-            merge(pd.DataFrame(recommendations).reset_index(drop=True), how='inner', left_on='i_id',
-                  right_on='i_id'). \
-            sort_values(by='prediction', ascending=False)
-        if if_need_print_time:
-            print('\nВремя алгоритма', time.time() - now)
-
-
-        return recommendations.head(20)
-
-    def train_model(self, thread):
+    def train_model(self, thread=None, if_progress_need=True):
         print(datetime.now(), 'Start train...')
-        thread.set_progress(0.01)
+        if if_progress_need: thread.set_progress(0.01)
         print(datetime.now(), 'Progress set 0.01.')
 
-        self.train_user = self.data_with_user.sample(frac=0.8)
-        thread.set_progress(0.09)
+        self.train_data = self.data_with_user.sample(frac=0.8)
+        if if_progress_need: thread.set_progress(0.09)
         print(datetime.now(), 'self.data_with_user.sample(frac=0.8)')
-        self.val_user = self.data_with_user.drop(self.train_user.index.tolist()).sample(frac=0.5, random_state=8)
-        thread.set_progress(0.19)
+        self.val_data = self.data_with_user.drop(self.train_data.index.tolist()).sample(frac=0.5, random_state=8)
+        if if_progress_need: thread.set_progress(0.19)
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)')
-        self.test_user = self.data_with_user.drop(self.train_user.index.tolist()).drop(self.val_user.index.tolist())
+        self.test_data = self.data_with_user.drop(self.train_data.index.tolist()).drop(self.val_data.index.tolist())
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())')
 
         print("ТЕСТ НА ДЕЛЕНИЕ НА ВЫБОРКИ!!!!!!!!!!")
         print(len(np.unique(self.data_with_user["u_id"])))
-        print(len(np.unique(self.train_user["u_id"])))
-        print(len(np.unique(self.test_user["u_id"])))
+        print(len(np.unique(self.train_data["u_id"])))
+        print(len(np.unique(self.test_data["u_id"])))
 
         lr, reg, factors = (0.02, 0.02, 64) #64(0.01, 0.02, 100)  (0.02, 0.016, 100)
         epochs = 10
 
-        thread.set_progress(0.25)
+        if if_progress_need: thread.set_progress(0.25)
         print(datetime.now(), 'start SVD create')
         svd = SVD(learning_rate=lr, regularization=reg, n_epochs=epochs, n_factors=factors,
                   min_rating=0.5, max_rating=5)
         print(datetime.now(), 'finish SVD create. Start fit...')
 
-        thread.set_progress(0.50)
-        svd.fit(Data=self.train_user, Data_val=self.val_user, early_stopping=False, shuffle=False, progress=lambda p: thread.set_progress(p * 0.25 + 0.50))  # early_stopping=True
+        if if_progress_need:
+            thread.set_progress(0.50)
+            svd.fit(Data=self.train_data, Data_val=self.val_data, early_stopping=False, shuffle=False, progress=lambda p: thread.set_progress(p * 0.25 + 0.50))  # early_stopping=True
+        else:
+            svd.fit(Data=self.train_data, Data_val=self.val_data, early_stopping=False, shuffle=False)  # early_stopping=True
+
         print(datetime.now(), 'finish svd.fit. Start predict')
 
-        thread.set_progress(0.75)
-        pred = svd.predict(self.test_user)
+        if if_progress_need: thread.set_progress(0.75)
+        pred = svd.predict(self.test_data)
         print(datetime.now(), 'finish svd.predict. Start mean and sqrt')
-        thread.set_progress(0.99)
-        mae = mean_absolute_error(self.test_user["rating"], pred)
-        rmse = np.sqrt(mean_squared_error(self.test_user["rating"], pred))
+        if if_progress_need: thread.set_progress(0.99)
+        mae = mean_absolute_error(self.test_data["rating"], pred)
+        rmse = np.sqrt(mean_squared_error(self.test_data["rating"], pred))
         print(datetime.now(), 'finish print results...')
         print("Test MAE:  {:.2f}".format(mae))
         print("Test RMSE: {:.2f}".format(rmse))
         print('{} factors, {} lr, {} reg'.format(factors, lr, reg))
 
         self.svd = svd
-        thread.set_progress(1.00)
+        if if_progress_need: thread.set_progress(1.00)
