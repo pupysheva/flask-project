@@ -11,14 +11,12 @@ sys.path.append('./')
 from reco_engine import RecommendationAlgorithm
 
 
-
 def init():
-    global g_rec_alg
-    global g_user_ids_list
     g_rec_alg = RecommendationAlgorithm(from_pkl=True)
     # Получить список всех пользователей
     g_user_ids_list = g_rec_alg.data_with_user["u_id"].unique()
     print(len(g_user_ids_list))
+    return g_rec_alg, g_user_ids_list
 
 
 def pred_thread(rec_alg, users, queue, id_thread):
@@ -42,12 +40,12 @@ def pred_thread(rec_alg, users, queue, id_thread):
     queue.put((user_with_rec, items_in_rec))
 
 
-def calculate_coverage(users):
+def calculate_coverage(g_rec_alg, g_user_ids_list):
     g_items_in_rec = {}
     g_user_with_rec = []
     q = Queue()
     for i in range(os.cpu_count()):
-        p = Process(target=pred_thread, args=(g_rec_alg, users, q, i))
+        p = Process(target=pred_thread, args=(g_rec_alg, g_user_ids_list, q, i))
         p.start()
     for i in range(os.cpu_count()):
         (user_with_rec, items_in_rec) = q.get()
@@ -73,9 +71,9 @@ def calculate_coverage(users):
 
 
 def main():
-    init()
+    g_rec_alg, g_user_ids_list = init()
     now = time.time()
-    movies, movies_in_rec, users, users_in_rec, user_coverage, movie_coverage = calculate_coverage(g_user_ids_list)
+    movies, movies_in_rec, users, users_in_rec, user_coverage, movie_coverage = calculate_coverage(g_rec_alg, g_user_ids_list)
     print(time.time() - now)
 
     print(user_coverage, movie_coverage)

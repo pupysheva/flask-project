@@ -9,24 +9,22 @@ import pandas as pd
 import numpy as np
 import pickle
 import os
-import shutil
 import time
 
 
 def create_svd(svd_filename, data_with_user):
-    train_user = data_with_user.sample(frac=0.8)
-    val_user = data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)
-    test_user = data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())
+    train_data = data_with_user.sample(frac=0.8)
+    val_data = data_with_user.drop(train_data.index.tolist()).sample(frac=0.5, random_state=8)
+    test_data = data_with_user.drop(train_data.index.tolist()).drop(val_data.index.tolist())
 
-    # lr, reg, factors = (0.007, 0.03, 90)
-    lr, reg, factors = (0.02, 0.016, 64)
-    epochs = 10  # epochs = 50
+    lr, reg, factors = (0.02, 0.015, 64)
+    epochs = 10
     svd = SVD(learning_rate=lr, regularization=reg, n_epochs=epochs, n_factors=factors, min_rating=0.5, max_rating=5)
-    svd.fit(Data=train_user, Data_val=val_user, early_stopping=False, shuffle=False)
+    svd.fit(Data=train_data, Data_val=val_data)
 
-    pred = svd.predict(test_user)
-    mae = mean_absolute_error(test_user["rating"], pred)
-    rmse = np.sqrt(mean_squared_error(test_user["rating"], pred))
+    pred = svd.predict(test_data)
+    mae = mean_absolute_error(test_data["rating"], pred)
+    rmse = np.sqrt(mean_squared_error(test_data["rating"], pred))
     print("Test MAE:  {:.2f}".format(mae))
     print("Test RMSE: {:.2f}".format(rmse))
     print('{} factors, {} lr, {} reg'.format(factors, lr, reg))
@@ -51,7 +49,6 @@ def create_or_load_data_with_user(variant, movies_df, data_with_user_filename):
     return create_data_with_user(fetch_ml_ratings(target_df='ratings', variant=variant), movies_df, data_with_user_filename)
 
 
-
 def create_or_load_dfs(variant, data_with_user, movies_df, data_with_user_filename):
     now = time.time()
     if movies_df is None:
@@ -60,7 +57,6 @@ def create_or_load_dfs(variant, data_with_user, movies_df, data_with_user_filena
         data_with_user = create_or_load_data_with_user(variant, movies_df, data_with_user_filename)
     print('\n', time.time() - now)
     return data_with_user, movies_df
-
 
 
 def create_data_with_user(df, movies_df, data_with_user_filename):
@@ -100,8 +96,6 @@ def create_data_with_user(df, movies_df, data_with_user_filename):
     # print('\n', time.time() - now)
     # Create an empty dictionary.
     my_ratings = {}
-    print("TEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEEESTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTTT")
-    # Fill the dictionary, pair by pair.
     my_ratings[920] = 5
     my_ratings[1721] = 5
     my_ratings[47382] = 4
@@ -132,17 +126,14 @@ def create_data_with_user(df, movies_df, data_with_user_filename):
     data_with_user = model.append(user_ratings, ignore_index=True)
     return data_with_user
 
+
 def generate_if_need(path='./resources', svd=None, movies_df=None, data_with_user=None):
     svd_filename = '/'.join((path, 'ml-20m/model_svd.pkl'))
     data_with_user_filename = '/'.join((path, 'ml-20m/data_with_user.pkl'))
     movies_filename = '/'.join((path, 'ml-20m/movies.pkl'))
     variant = '20m'
-
-    # ИЗМЕНИТЬ ЕСЛИ ОБОИХ ФАЙЛОВ НЕТ, ТО НУЖНО СКАЧАТЬ ЕЩЁ РАЗ или взять из zip
     if data_with_user is None or movies_df is None:
         (data_with_user, movies_df) = create_or_load_dfs(variant, data_with_user, movies_df, data_with_user_filename)
-
     if svd is None:
         svd = create_or_load_svd(svd_filename, data_with_user)
-
     return (data_with_user, movies_df, svd)

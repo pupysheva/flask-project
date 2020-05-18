@@ -1,5 +1,7 @@
 #!/usr/bin/python
 # utf-8
+
+
 def priority(i):
     """ Set the priority of the process to below-normal."""
 
@@ -10,7 +12,6 @@ def priority(i):
         isWindows = False
     else:
         isWindows = True
-
     try:
         if isWindows:
             # Based on:
@@ -23,13 +24,15 @@ def priority(i):
             win32process.SetPriorityClass(handle, win32process.BELOW_NORMAL_PRIORITY_CLASS if i >= 0 else win32process.ABOVE_NORMAL_PRIORITY_CLASS)
         else:
             import os
-    
             os.nice(i)
             pass
     except PermissionError as e:
         print("Ignore nice:", e)
 
+
 def lowpriority():
     priority(15)
+
+
 def hightpriority():
     priority(-15)

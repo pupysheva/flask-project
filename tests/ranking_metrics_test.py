@@ -11,20 +11,14 @@ from reco_engine import RecommendationAlgorithm
 
 
 def init():
-    global g_rec_alg
     g_rec_alg = RecommendationAlgorithm(from_pkl=True)
     g_rec_alg.train_model()
-
     # Получить список всех пользователей
-    global g_user_ids_list_for_ped
     g_user_ids_list_for_ped = g_rec_alg.test_data["u_id"].unique()
     print(len(g_user_ids_list_for_ped))
-
-
-    global mean_rating_users
     # средние оценки по юзерам
     mean_rating_users = g_rec_alg.train_data.groupby(['u_id'], as_index=False)['rating'].mean()
-
+    return g_rec_alg, g_user_ids_list_for_ped, mean_rating_users
 
 
 def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id_thread):
@@ -45,16 +39,17 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id
                 if len(id_films_liked_by_u) != 0:
                     recall = intersection / len(id_films_liked_by_u)
                     recall_list.append(recall)
-                    precision = intersection / len(pred_for_u)
-                    precision_list.append(precision)
+                    precision_list = intersection / len(pred_for_u)
+                    precision_list.append(precision_list)
                 if ep % 100 == 99:
                     print(datetime.now(), (time.time() - now) / 100)
                     now = time.time()
 
     print(datetime.now(), 'finish tread', id_thread)
-    queue.put((precision, recall))
+    queue.put((precision_list, recall_list))
 
-def calculate_precision_recall(g_user_ids_list_for_ped, mean_rating_users):
+
+def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users):
     q = Queue()
     g_pres_list = []
     g_recall_list = []
@@ -67,16 +62,16 @@ def calculate_precision_recall(g_user_ids_list_for_ped, mean_rating_users):
         g_pres_list.extend(precision_list)
         g_recall_list.extend(recall_list)
 
-
         precision_mean = np.array(g_pres_list).mean()
         recall_mean = np.array(g_recall_list).mean()
     return precision_mean, recall_mean
 
+
 def main():
     print("Количество потоков ", os.cpu_count())
-    init()
+    g_rec_alg, g_user_ids_list_for_ped, mean_rating_users = init()
     now = time.time()
-    precision, recall = calculate_precision_recall(g_user_ids_list_for_ped, mean_rating_users)
+    precision, recall = calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users)
     print(time.time() - now)
 
     print(precision, recall)
@@ -85,6 +80,7 @@ def main():
     file_p_r.write("precision: "+str(precision))
     file_p_r.write("recall: "+str(recall))
     file_p_r.close()
+
 
 if __name__ == "__main__":
     main()
