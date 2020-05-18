@@ -50,7 +50,7 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id
                     now = time.time()
 
     print(datetime.now(), 'finish tread', id_thread)
-    queue.put((precision, recall))
+    queue.put((precision_list, recall_list))
 
 def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users):
     q = Queue()
