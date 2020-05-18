@@ -22,7 +22,6 @@ def init():
 
 
 def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id_thread):
-    now = time.time()
     precision_list = []
     recall_list = []
     now = time.time()
