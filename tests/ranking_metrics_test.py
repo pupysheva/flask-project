@@ -1,28 +1,24 @@
 #!/usr/bin/python
 # utf-8
 import numpy as np
-import pandas as pd
 import time
 import sys
-sys.path.append('./')
-from reco_engine import RecommendationAlgorithm
 import os
 from datetime import datetime
 from multiprocessing import Process, Queue
+sys.path.append('./')
+from reco_engine import RecommendationAlgorithm
+
 
 def init():
     g_rec_alg = RecommendationAlgorithm(from_pkl=True)
-    g_rec_alg.train_model(if_progress_need = False)
-
+    g_rec_alg.train_model()
     # Получить список всех пользователей
     g_user_ids_list_for_ped = g_rec_alg.test_data["u_id"].unique()
     print(len(g_user_ids_list_for_ped))
-
-
     # средние оценки по юзерам
     mean_rating_users = g_rec_alg.train_data.groupby(['u_id'], as_index=False)['rating'].mean()
-
-    return (g_rec_alg, g_user_ids_list_for_ped, mean_rating_users)
+    return g_rec_alg, g_user_ids_list_for_ped, mean_rating_users
 
 
 def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id_thread):
@@ -52,6 +48,7 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id
     print(datetime.now(), 'finish tread', id_thread)
     queue.put((precision_list, recall_list))
 
+
 def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users):
     q = Queue()
     g_pres_list = []
@@ -65,14 +62,14 @@ def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_u
         g_pres_list.extend(precision_list)
         g_recall_list.extend(recall_list)
 
-
         precision_mean = np.array(g_pres_list).mean()
         recall_mean = np.array(g_recall_list).mean()
     return precision_mean, recall_mean
 
+
 def main():
     print("Количество потоков ", os.cpu_count())
-    (g_rec_alg, g_user_ids_list_for_ped, mean_rating_users) = init()
+    g_rec_alg, g_user_ids_list_for_ped, mean_rating_users = init()
     now = time.time()
     precision, recall = calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users)
     print(time.time() - now)
@@ -83,6 +80,7 @@ def main():
     file_p_r.write("precision: "+str(precision))
     file_p_r.write("recall: "+str(recall))
     file_p_r.close()
+
 
 if __name__ == "__main__":
     main()

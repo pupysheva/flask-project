@@ -1,5 +1,6 @@
 #!/usr/bin/python
 # utf-8
+import struct
 import sys
 
 if '-h' in sys.argv:
@@ -21,7 +22,6 @@ from priority import hightpriority
 
 
 import random
-import struct
 import tempfile
 import threading
 import time
@@ -39,17 +39,28 @@ if not os.path.exists(tmppath):
     os.mkdir(tmppath)
 
 rec_alg = None
-# Для запуска pkl в PyCharm читать http://prog.tversu.ru/pr1/configurations.pdf
 from_pkl = '-pkl' in sys.argv
+
 
 @app.route('/get_recommendation/<int:user_id>', methods=["GET"])
 def get_recommendation(user_id):
-    past = time.time()
+    now = time.time()
     global rec_alg
     recommendations = rec_alg.get_recommendation(user_id)
-    return render_template('main.html',  tables=[recommendations.to_html(classes='data', index=False)],
+    return render_template('recom_index.html',  tables=[recommendations.to_html(classes='data', index=False)],
                            titles=recommendations.columns.values,
-                           time=(time.time() - past))
+                           time=(time.time() - now))
+
+
+@app.route('/rated_by_user/<int:user_id>', methods=["GET"])
+def rated_by_user(user_id):
+    now = time.time()
+    global rec_alg
+    rated_by_user = rec_alg.get_films_rated_by_user(user_id)
+    return render_template('rated_index.html',  tables=[rated_by_user.to_html(classes='data', index=False)],
+                           titles=rated_by_user.columns.values,
+                           time=(time.time() - now))
+
 
 @app.route('/train', methods=["POST"])
 def train_model():
@@ -66,36 +77,39 @@ def train_model():
     th.start()
     return str(thread_id)
 
-# @app.route('/progress/<int:thread_id>')
-# def progress(thread_id):
-#     filename = tmppath + '/thread_' + str(thread_id)
-#     if os.path.exists(filename):
-#         with open(filename, 'rb+') as f:
-#             bytes = f.read(4)
-#             if len(bytes) >= 4:
-#                 data = str(struct.unpack('f', bytes)[0])
-#             else:
-#                 data = 0
-#         if data == 1:
-#             os.remove(filename)
-#     else:
-#         data = 0
-#     return str(data)
+
+@app.route('/progress/<int:thread_id>')
+def progress(thread_id):
+    filename = tmppath + '/thread_' + str(thread_id)
+    if os.path.exists(filename):
+        with open(filename, 'rb+') as f:
+            bytes = f.read(4)
+            if len(bytes) >= 4:
+                data = str(struct.unpack('f', bytes)[0])
+            else:
+                data = 0
+        if data == 1:
+            os.remove(filename)
+    else:
+        data = 0
+    return str(data)
+
 
 def train():
     train_model()
     threading.Timer(60*2*60, train).start()
 
+
 def first_train():
     hightpriority()
     global rec_alg
     rec_alg = RecommendationAlgorithm(from_pkl=from_pkl)
-    # Для управления таймером в PyCharm читать http://prog.tversu.ru/pr1/configurations.pdf
     t = threading.Timer(
         60*2*60 if '-no-t' in sys.argv
         else 0 if '-t' in sys.argv
-        else 5*60, train)
+        else 0.1*60, train)
     t.start()
+
 
 # При создании новых потоков в режиме spawn (Microsoft Windows),
 # новые потоки выполняют инициализацию кода с флагом __name__ = '__mp_main__'.
@@ -103,6 +117,7 @@ def first_train():
 # является основным, то есть не является новым мульти-потоком mp (multiprocessing).
 if __name__ != '__mp_main__':
     first_train()
+
 # Запускать Flask надо только в том случае, если скрипт был запущен напрямую.
 # Если скрипт запущен через Flask, то Flask запускать не нужно, он уже запущен.
 if __name__ == '__main__':

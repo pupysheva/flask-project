@@ -14,7 +14,6 @@ from model import SVD
 
 class RecommendationAlgorithm:
     def __init__(self, from_pkl):
-
         if from_pkl:
             print("read in PKL ...")
             now = time.time()
@@ -42,15 +41,10 @@ class RecommendationAlgorithm:
                                                  columns=["u_id", "i_id", "rating", "timestamp"],
                                                  chunksize=1000000)
                 now_r = time.time()
-                # Create empty list
                 list_of_dfs = []
-                # Create empty dataframe
                 self.data_with_user = pd.DataFrame()
-                # Start Chunking
                 for chunk_df in df_generator:
-                    # Start Appending Data Chunks from SQL Result set into List
                     list_of_dfs.append(chunk_df)
-                # Start appending data from list to dataframe
                 self.data_with_user = pd.concat(list_of_dfs, ignore_index=True)
                 print('\nВремя соединения chunk`ов', time.time() - now_r)
                 self.data_with_user.drop(columns=['timestamp'], inplace=True)
@@ -94,7 +88,7 @@ class RecommendationAlgorithm:
         rated_df = rated_df.loc[rated_df.u_id == user_id].sort_values(by='rating', ascending=False)
         return rated_df
 
-    def get_recommendation(self, user_id, if_need_print_time = True):
+    def get_recommendation(self, user_id, if_need_print_time=True):
         if user_id in self.data_with_user_u_id_unique:
             user_id = [user_id]
 
@@ -106,7 +100,8 @@ class RecommendationAlgorithm:
             pred_train = self.svd.predict(recommendations)
             recommendations['prediction'] = pred_train
 
-            user_ratings = self.train_data[self.train_data.u_id == user_id[0]] #self.data_with_user[self.data_with_user.u_id == user_id[0]]
+            user_ratings = self.data_with_user[self.data_with_user.u_id == user_id[0]]
+
             user_ratings.columns = ['u_id', 'i_id', 'rating']
             # Топ 20 фильмов для рекомендации
             recommendations = self.movies_df[~self.movies_df['i_id'].isin(user_ratings['i_id'])]. \
@@ -119,52 +114,52 @@ class RecommendationAlgorithm:
         else:
             return pd.DataFrame()
 
-    def train_model(self, thread=None, if_progress_need=True):
+    def train_model(self, thread=None):
         print(datetime.now(), 'Start train...')
-        if if_progress_need: thread.set_progress(0.01)
+        if thread is not None: thread.set_progress(0.01)
         print(datetime.now(), 'Progress set 0.01.')
 
-        self.train_data = self.data_with_user.sample(frac=0.8)
-        if if_progress_need: thread.set_progress(0.09)
+        train_data = self.data_with_user.sample(frac=0.8)
+        if thread is not None: thread.set_progress(0.09)
         print(datetime.now(), 'self.data_with_user.sample(frac=0.8)')
-        self.val_data = self.data_with_user.drop(self.train_data.index.tolist()).sample(frac=0.5, random_state=8)
-        if if_progress_need: thread.set_progress(0.19)
+        val_data = self.data_with_user.drop(train_data.index.tolist()).sample(frac=0.5, random_state=8)
+        if thread is not None: thread.set_progress(0.19)
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)')
-        self.test_data = self.data_with_user.drop(self.train_data.index.tolist()).drop(self.val_data.index.tolist())
+        test_data = self.data_with_user.drop(train_data.index.tolist()).drop(val_data.index.tolist())
         print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())')
 
         print("ТЕСТ НА ДЕЛЕНИЕ НА ВЫБОРКИ!!!!!!!!!!")
         print(len(np.unique(self.data_with_user["u_id"])))
-        print(len(np.unique(self.train_data["u_id"])))
-        print(len(np.unique(self.test_data["u_id"])))
+        print(len(np.unique(train_data["u_id"])))
+        print(len(np.unique(test_data["u_id"])))
 
-        lr, reg, factors = (0.02, 0.02, 64) #64(0.01, 0.02, 100)  (0.02, 0.016, 100)
+        learning_rate, reg, features = (0.02, 0.015, 64)
         epochs = 10
 
-        if if_progress_need: thread.set_progress(0.25)
+        if thread is not None: thread.set_progress(0.25)
         print(datetime.now(), 'start SVD create')
-        svd = SVD(learning_rate=lr, regularization=reg, n_epochs=epochs, n_factors=factors,
+        svd = SVD(learning_rate=learning_rate, regularization=reg, n_epochs=epochs, n_factors=features,
                   min_rating=0.5, max_rating=5)
         print(datetime.now(), 'finish SVD create. Start fit...')
 
-        if if_progress_need:
+        if thread is not None:
             thread.set_progress(0.50)
-            svd.fit(Data=self.train_data, Data_val=self.val_data, early_stopping=False, shuffle=False, progress=lambda p: thread.set_progress(p * 0.25 + 0.50))  # early_stopping=True
+            svd.fit(Data=train_data, Data_val=val_data, progress=lambda p: thread.set_progress(p * 0.25 + 0.50))
         else:
-            svd.fit(Data=self.train_data, Data_val=self.val_data, early_stopping=False, shuffle=False)  # early_stopping=True
+            svd.fit(Data=train_data, Data_val=val_data)
 
         print(datetime.now(), 'finish svd.fit. Start predict')
 
-        if if_progress_need: thread.set_progress(0.75)
-        pred = svd.predict(self.test_data)
+        if thread is not None: thread.set_progress(0.75)
+        pred = svd.predict(test_data)
         print(datetime.now(), 'finish svd.predict. Start mean and sqrt')
-        if if_progress_need: thread.set_progress(0.99)
-        mae = mean_absolute_error(self.test_data["rating"], pred)
-        rmse = np.sqrt(mean_squared_error(self.test_data["rating"], pred))
+        if thread is not None: thread.set_progress(0.99)
+        mae = mean_absolute_error(test_data["rating"], pred)
+        rmse = np.sqrt(mae)
         print(datetime.now(), 'finish print results...')
         print("Test MAE:  {:.2f}".format(mae))
         print("Test RMSE: {:.2f}".format(rmse))
-        print('{} factors, {} lr, {} reg'.format(factors, lr, reg))
+        print('{} factors, {} lr, {} reg'.format(learning_rate, reg, features))
 
         self.svd = svd
-        if if_progress_need: thread.set_progress(1.00)
+        if thread is not None: thread.set_progress(1.00)
