@@ -45,8 +45,8 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id
                     recall_list.append(recall)
                     precision = intersection / len(pred_for_u)
                     precision_list.append(precision)
-                if ep % 100 == 99:
-                    print(datetime.now(), (time.time() - now) / 100)
+                if ep % 1000 == 999:
+                    print(datetime.now(), '{:>5.1f}%'.format(ep * 100.0 / len(g_user_ids_list_for_ped)), (time.time() - now) / 100)
                     now = time.time()
 
     print(datetime.now(), 'finish tread', id_thread)
