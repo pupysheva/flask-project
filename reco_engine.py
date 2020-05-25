@@ -88,17 +88,16 @@ class RecommendationAlgorithm:
 
     def get_recommendation(self, user_id, if_need_print_time=True):
         if user_id in self.data_with_user_u_id_unique:
-            user_id = [user_id]
 
             now = time.time()
             all_movies = self.data_with_user_i_id_unique
-            recommendations = pd.DataFrame(list(product(user_id, all_movies)), columns=['u_id', 'i_id'])
+            recommendations = pd.DataFrame(list(product([user_id], all_movies)), columns=['u_id', 'i_id'])
 
             # Получение прогноза оценок для user_id
             pred_train = self.svd.predict(recommendations)
             recommendations['prediction'] = pred_train
 
-            user_ratings = self.data_with_user[self.data_with_user.u_id == user_id[0]]
+            user_ratings = self.data_with_user[self.data_with_user.u_id == user_id]
 
             user_ratings.columns = ['u_id', 'i_id', 'rating']
             # Топ 20 фильмов для рекомендации
