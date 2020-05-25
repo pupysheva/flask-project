@@ -89,9 +89,6 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
         if variant == '10m':
             os.rename(os.path.join(data_dir_path, 'ml-10M100K'),
                       os.path.join(data_dir_path, dirname))
-
-        # for using cache: os.remove(zip_path)
-
         return fetch_ml_ratings(variant=variant, target_df=target_df)
 
     else:

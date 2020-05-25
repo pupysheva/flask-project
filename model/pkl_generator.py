@@ -94,7 +94,6 @@ def create_data_with_user(df, movies_df, data_with_user_filename):
     # now = time.time()
     # data_with_user.to_pickle(data_with_user_filename)
     # print('\n', time.time() - now)
-    # Create an empty dictionary.
     my_ratings = {}
     my_ratings[920] = 5
     my_ratings[1721] = 5
@@ -113,7 +112,6 @@ def create_data_with_user(df, movies_df, data_with_user_filename):
     for i, val in my_ratings.items():
         print('Rated %d %d stars: %s' % (val, i, movies_df.loc[movies_df.i_id == i].title.values))
 
-    print("Adding your recommendations!")
     items_id = list(my_ratings.keys())
     ratings_list = list(my_ratings.values())
     user_id = np.asarray([0] * len(ratings_list))

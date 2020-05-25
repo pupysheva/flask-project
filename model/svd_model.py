@@ -21,8 +21,6 @@ class SVD():
         movie_embeddings (numpy array): матрица признаков элементов
         user_deviations (numpy array): вектор смециений пользователей
         movie_deviations (numpy array): вектор смециений элемнетов
-        early_stopping (boolean): стоит ли прекратить обучение на основе вычисления ошибок на валидационной выборке
-        shuffle (boolean): стоит ли перемешивать данные перед каждой эпохой.
     """
 
     def __init__(self, learning_rate=.02, regularization=0.015, n_epochs=50,
