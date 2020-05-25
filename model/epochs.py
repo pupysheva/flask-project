@@ -4,11 +4,12 @@ import numpy as np
 
 from numba import njit, prange
 
+
 @njit(parallel=True)
-def _init_params(coun_users, count_items, count_features):
+def _init_params(count_users, count_items, count_features):
     """Инициализация смещений и матриц признаков пользователей и элементов.
     Аргументы:
-        coun_users (int): количество пользователей
+        count_users (int): количество пользователей
         count_items (int): количество пользователей
         count_features (int): количество признаков
     Возвращает:
@@ -17,10 +18,10 @@ def _init_params(coun_users, count_items, count_features):
         user_deviations - вектор смециений пользователей
         movie_deviations - вектор смециений элемнетов
     """
-    user_embeddings = np.random.normal(0, .01, (coun_users, count_features))
+    user_embeddings = np.random.normal(0, .01, (count_users, count_features))
     movie_embeddings = np.random.normal(0, .01, (count_items, count_features))
 
-    user_deviations = np.zeros(coun_users)
+    user_deviations = np.zeros(count_users)
     movie_deviations = np.zeros(count_items)
 
     return user_embeddings, movie_embeddings, user_deviations, movie_deviations
@@ -73,7 +74,7 @@ def _start_ep(Data, user_embeddings, movie_embeddings, user_deviations, movie_de
 
 @njit(parallel=True)
 def _calculation_valid_metrics(Data_val, user_embeddings, movie_embeddings, user_deviations, movie_deviations, g_average, count_features):
-    """Вычисляет метрики проверки (ошибка, rmse и mae).
+    """Вычисляет метрики на проверочной выборке (mse, rmse и mae).
     Аргументы:
         Data_val (numpy array): валидационный набор данных
         user_embeddings (numpy array): матрица признаков пользователей
