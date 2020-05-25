@@ -4,88 +4,87 @@ import numpy as np
 import pandas as pd
 import time
 import sys
+import os
+from datetime import datetime
+from multiprocessing import Process, Queue
 sys.path.append('./')
 from reco_engine import RecommendationAlgorithm
-from multiprocessing import Pool
-import os
-import threading
-from datetime import datetime
-
-rec_alg = RecommendationAlgorithm(from_pkl=True)
 
 
-# Получить список всех пользователей
-user_ids_list = rec_alg.data_with_user["u_id"].unique()
-print(len(user_ids_list))
-g_items_in_rec = {}
-g_user_with_rec = []
-g_users = None
+def init():
+    g_rec_alg = RecommendationAlgorithm(from_pkl=True)
+    # Получить список всех пользователей
+    g_user_ids_list = g_rec_alg.data_with_user["u_id"].unique()
+    print(len(g_user_ids_list))
+    return g_rec_alg, g_user_ids_list
 
-lock = threading.Lock()
 
-def pred_thread(id_thread):
-    global g_users
-    global g_user_with_rec
-    global g_items_in_rec
-    users = g_users
+def pred_thread(rec_alg, users, queue, id_thread):
     user_with_rec = []
     items_in_rec = {}
     now = time.time()
     for ep, user in enumerate(users):
         if ep % os.cpu_count() == id_thread:
-            recset = rec_alg.get_recommendation(user, if_need_print_time=False)
-            if not recset.empty:
+            rec_set = rec_alg.get_recommendation(user, if_need_print_time=False)
+            if not rec_set.empty:
                 user_with_rec.append(user)
-                for rec in recset["i_id"].values:
+                for rec in rec_set["i_id"].values:
                     if rec in items_in_rec:
                         items_in_rec[rec] += 1
                     else:
                         items_in_rec[rec] = 1
-
             if ep % 100 == 99:
                 print(datetime.now(), (time.time() - now) / 100)
                 now = time.time()
-    lock.acquire()
-    print(time.time(), 'merge results by thread', id_thread)
-    g_user_with_rec.extend(user_with_rec)
-    for key, value in items_in_rec.items():
-        if key in g_items_in_rec:
-            g_items_in_rec[key] += value
-        else:
-            g_items_in_rec[key] = value
-    lock.release()
+    print(datetime.now(), 'finish tread', id_thread)
+    queue.put((user_with_rec, items_in_rec))
 
-def calculate_coverage(users):
-    global g_users
-    global g_user_with_rec
-    global g_items_in_rec
-    g_users = users
-    with Pool(os.cpu_count()) as p:
-        p.map(pred_thread, range(os.cpu_count()))
 
+def calculate_coverage(g_rec_alg, g_user_ids_list):
+    g_items_in_rec = {}
+    g_user_with_rec = []
+    q = Queue()
+    for i in range(os.cpu_count()):
+        p = Process(target=pred_thread, args=(g_rec_alg, g_user_ids_list, q, i))
+        p.start()
+    for i in range(os.cpu_count()):
+        (user_with_rec, items_in_rec) = q.get()
+        g_user_with_rec.extend(user_with_rec)
+        for key, value in items_in_rec.items():
+            if key in g_items_in_rec:
+                g_items_in_rec[key] += value
+            else:
+                g_items_in_rec[key] = value
     print("g_items_in_rec", g_items_in_rec, len(g_items_in_rec.items()))
     no_movies = 27278
     no_movies_in_rec = len(g_items_in_rec.items())
 
-    no_users = len(user_ids_list)
+    no_users = len(g_user_ids_list)
     no_users_in_rec = len(g_user_with_rec)
 
     print("no_movies_in_rec  ", no_movies_in_rec)
     print("no_users_in_rec ", no_users_in_rec)
 
-    user_covarage = float(no_users_in_rec / no_users)
-    movie_covarage = float(no_movies_in_rec / no_movies)
-    return no_movies, no_movies_in_rec, no_users, no_users_in_rec, user_covarage, movie_covarage
+    user_coverage = float(no_users_in_rec / no_users)
+    movie_coverage = float(no_movies_in_rec / no_movies)
+    return no_movies, no_movies_in_rec, no_users, no_users_in_rec, user_coverage, movie_coverage
 
-now = time.time()
-movies, movies_in_rec, users, users_in_rec, user_covarage, movie_covarage = calculate_coverage(user_ids_list)
-print(time.time() - now)
 
-print(user_covarage, movie_covarage)
+def main():
+    g_rec_alg, g_user_ids_list = init()
+    now = time.time()
+    movies, movies_in_rec, users, users_in_rec, user_coverage, movie_coverage = calculate_coverage(g_rec_alg, g_user_ids_list)
+    print(time.time() - now)
 
-file_covarage = open("./tests/covarage_result.log", "w")
-file_covarage.write("movies: "+str(movies)+"; movies_in_rec:"+str(movies_in_rec)+"\n")
-file_covarage.write("users: "+str(users)+"; users_in_rec:"+str(users_in_rec)+"\n")
-file_covarage.write("user_covarage: "+str(user_covarage)+"; movie_covarage:"+str(movie_covarage)+"\n")
+    print(user_coverage, movie_coverage)
 
-file_covarage.close()
+    file_coverage = open("./tests/coverage_result.log", "w")
+    file_coverage.write("movies: "+str(movies)+"; movies_in_rec:"+str(movies_in_rec)+"\n")
+    file_coverage.write("users: "+str(users)+"; users_in_rec:"+str(users_in_rec)+"\n")
+    file_coverage.write("user_coverage: "+str(user_coverage)+"; movie_coverage:"+str(movie_coverage)+"\n")
+
+    file_coverage.close()
+
+
+if __name__ == "__main__":
+    main()

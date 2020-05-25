@@ -1,10 +1,11 @@
 #!/usr/bin/python
 # utf-8
+import struct
 import sys
 
 if '-h' in sys.argv:
     print(
-'''usage: ./start.py [-h|-pkl]
+'''usage: python start.py [-h|-pkl|-no-t|-t]
 -h	this help.
 -pkl	read and save via pkl files.
 -no-t	do not run a first train.
@@ -21,7 +22,6 @@ from priority import hightpriority
 
 
 import random
-import struct
 import tempfile
 import threading
 import time
@@ -40,14 +40,26 @@ if not os.path.exists(tmppath):
 rec_alg = None
 from_pkl = '-pkl' in sys.argv
 
+
 @app.route('/get_recommendation/<int:user_id>', methods=["GET"])
 def get_recommendation(user_id):
-    past = time.time()
+    now = time.time()
     global rec_alg
     recommendations = rec_alg.get_recommendation(user_id)
-    return render_template('main.html',  tables=[recommendations.to_html(classes='data', index=False)],
+    return render_template('recom_index.html',  tables=[recommendations.to_html(classes='data', index=False)],
                            titles=recommendations.columns.values,
-                           time=(time.time() - past))
+                           time=(time.time() - now))
+
+
+@app.route('/rated_by_user/<int:user_id>', methods=["GET"])
+def rated_by_user(user_id):
+    now = time.time()
+    global rec_alg
+    rated_by_user = rec_alg.get_films_rated_by_user(user_id)
+    return render_template('rated_index.html',  tables=[rated_by_user.to_html(classes='data', index=False)],
+                           titles=rated_by_user.columns.values,
+                           time=(time.time() - now))
+
 
 @app.route('/train', methods=["POST"])
 def train_model():
@@ -63,6 +75,7 @@ def train_model():
     th = threading.Thread(target=thf, args=())
     th.start()
     return str(thread_id)
+
 
 @app.route('/progress/<int:thread_id>')
 def progress(thread_id):
@@ -80,17 +93,31 @@ def progress(thread_id):
         data = 0
     return str(data)
 
+
 def train():
     train_model()
     threading.Timer(60*2*60, train).start()
+
 
 def first_train():
     hightpriority()
     global rec_alg
     rec_alg = RecommendationAlgorithm(from_pkl=from_pkl)
-    t = threading.Timer(5*60, train)
+    t = threading.Timer(
+        60*2*60 if '-no-t' in sys.argv
+        else 0 if '-t' in sys.argv
+        else 0.1*60, train)
     t.start()
 
-first_train()
+
+# При создании новых потоков в режиме spawn (Microsoft Windows),
+# новые потоки выполняют инициализацию кода с флагом __name__ = '__mp_main__'.
+# Надо запускать обучение только в том случае, если данный процесс
+# является основным, то есть не является новым мульти-потоком mp (multiprocessing).
+if __name__ != '__mp_main__':
+    first_train()
+
+# Запускать Flask надо только в том случае, если скрипт был запущен напрямую.
+# Если скрипт запущен через Flask, то Flask запускать не нужно, он уже запущен.
 if __name__ == '__main__':
     app.run(port=5000)
