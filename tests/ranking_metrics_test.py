@@ -22,7 +22,6 @@ def init():
 
 
 def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id_thread):
-    now = time.time()
     precision_list = []
     recall_list = []
     now = time.time()
@@ -39,8 +38,8 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id
                 if len(id_films_liked_by_u) != 0:
                     recall = intersection / len(id_films_liked_by_u)
                     recall_list.append(recall)
-                    precision_list = intersection / len(pred_for_u)
-                    precision_list.append(precision_list)
+                    precision = intersection / len(pred_for_u)
+                    precision_list.append(precision)
                 if ep % 100 == 99:
                     print(datetime.now(), (time.time() - now) / 100)
                     now = time.time()
