@@ -96,7 +96,7 @@ def progress(thread_id):
 
 def train():
     train_model()
-    threading.Timer(60*2*60, train).start()
+    threading.Timer(30*60, train).start()
 
 
 def first_train():
