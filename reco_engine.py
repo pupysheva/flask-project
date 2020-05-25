@@ -19,7 +19,6 @@ class RecommendationAlgorithm:
             now = time.time()
             (self.data_with_user, self.movies_df, self.svd) = generate_if_need()
             print('\n Время чтения PKL файлов:', time.time() - now)
-
         else:
             print("read in DB ...")
             now = time.time()
@@ -38,7 +37,7 @@ class RecommendationAlgorithm:
             else:
                 df_generator = pd.read_sql_table("Ratings",
                                                  con=engine,
-                                                 columns=["u_id", "i_id", "rating", "timestamp"],
+                                                 columns=["u_id", "i_id", "rating"],
                                                  chunksize=1000000)
                 now_r = time.time()
                 list_of_dfs = []
@@ -47,7 +46,6 @@ class RecommendationAlgorithm:
                     list_of_dfs.append(chunk_df)
                 self.data_with_user = pd.concat(list_of_dfs, ignore_index=True)
                 print('\nВремя соединения chunk`ов', time.time() - now_r)
-                self.data_with_user.drop(columns=['timestamp'], inplace=True)
 
             self.svd = generate_if_need(movies_df=self.movies_df, data_with_user=self.data_with_user)[2]
             print('\nВремя чтения BD:', time.time() - now)
@@ -78,7 +76,7 @@ class RecommendationAlgorithm:
                                            dtype={"user_id": Integer,
                                                   "movie_id": Integer,
                                                   "rating": Float,
-                                                  "timestamp": DateTime})
+                                                  "date_time": DateTime})
 
     def get_films_rated_by_user(self, user_id):
         user_ratings = self.data_with_user[self.data_with_user.u_id == user_id]
