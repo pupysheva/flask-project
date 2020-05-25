@@ -27,22 +27,22 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id
     now = time.time()
     for ep, user in enumerate(g_user_ids_list_for_ped):
         if ep % os.cpu_count() == id_thread:
-                mean_u = float(mean_rating_users[mean_rating_users["u_id"] == user]["rating"])
-                test_ratings = g_rec_alg.test_data[g_rec_alg.test_data["u_id"] == user]
-                id_films_liked_by_u = test_ratings[test_ratings["rating"] > mean_u]["i_id"].unique()
+            mean_u = float(mean_rating_users[mean_rating_users["u_id"] == user]["rating"])
+            test_ratings = g_rec_alg.test_data[g_rec_alg.test_data["u_id"] == user]
+            id_films_liked_by_u = test_ratings[test_ratings["rating"] > mean_u]["i_id"].unique()
 
-                pred_for_u = g_rec_alg.get_recommendation(user, if_need_print_time=False)["i_id"].unique()
+            pred_for_u = g_rec_alg.get_recommendation(user, if_need_print_time=False)["i_id"].unique()
 
-                intersection = len(list(set(id_films_liked_by_u) & set(pred_for_u)))
+            intersection = len(list(set(id_films_liked_by_u) & set(pred_for_u)))
 
-                if len(id_films_liked_by_u) != 0:
-                    recall = intersection / len(id_films_liked_by_u)
-                    recall_list.append(recall)
-                    precision = intersection / len(pred_for_u)
-                    precision_list.append(precision)
-                if ep % 100 == 99:
-                    print(datetime.now(), (time.time() - now) / 100)
-                    now = time.time()
+            if len(id_films_liked_by_u) != 0:
+                recall = intersection / len(id_films_liked_by_u)
+                recall_list.append(recall)
+                precision = intersection / len(pred_for_u)
+                precision_list.append(precision)
+            if ep % 1000 == 999:
+                print(datetime.now(), '{:>5.1f}%'.format(ep * 100.0 / len(g_user_ids_list_for_ped)), (time.time() - now) / 1000)
+                now = time.time()
 
     print(datetime.now(), 'finish tread', id_thread)
     queue.put((precision_list, recall_list))
