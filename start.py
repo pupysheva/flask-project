@@ -77,6 +77,16 @@ def train_model():
     return str(thread_id)
 
 
+# @app.route('/train', methods=["POST"])
+# def train_model():
+#     def thf():
+#         global rec_alg
+#         rec_alg = module_for_retraining.train_model(thread_id, from_pkl)
+#     thread_id = random.randint(0, 100000)
+#     th = threading.Thread(target=thf, args=())
+#     th.start()
+#     return str(thread_id)
+
 @app.route('/progress/<int:thread_id>')
 def progress(thread_id):
     filename = tmppath + '/thread_' + str(thread_id)

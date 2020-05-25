@@ -34,3 +34,10 @@ def train_model(q: Queue, id_thread: int, from_pkl):
         ra.train_model(f)
     q.put(ra)
 
+# #def train_model(q: Queue, id_thread: int, from_pkl):
+# def train_model(id_thread: int, from_pkl):
+#     lowpriority()
+#     ra = RecommendationAlgorithm(from_pkl=from_pkl)
+#     with ProgressInFile(id_thread) as f:
+#         ra.train_model(f)
+#     return ra
