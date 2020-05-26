@@ -23,6 +23,7 @@ def init():
 
 
 def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id_thread):
+    print(datetime.now(), 'finish tread', id_thread, memory_usage()[0], 'MiB')
     precision_list = []
     recall_list = []
     now = time.time()
@@ -45,7 +46,7 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id
                 print(datetime.now(), memory_usage()[0], 'MiB', '{:>5.1f}%'.format(ep * 100.0 / len(g_user_ids_list_for_ped)), (time.time() - now) / 1000)
                 now = time.time()
 
-    print(datetime.now(), 'finish tread', id_thread)
+    print(datetime.now(), 'finish tread', memory_usage()[0], 'MiB')
     queue.put((precision_list, recall_list))
 
 
