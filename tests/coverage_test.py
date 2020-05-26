@@ -76,7 +76,7 @@ def calculate_coverage(g_rec_alg, g_user_ids_list):
 
 
 def main():
-    print('{} main coverage total VIRT: {:>6.0f} MiB total SWAP: {:>7.0f} MiB threads: {} {} {}'.format(datetime.now(), virtual_memory().total / 2**20, swap_memory().total / 2**20, os.cpu_count(), platform.system(), platform.release()))
+    print('{} main coverage total VIRT: {:>6.0f} MiB total SWAP: {:>7.0f} MiB used VIRT: {:>6.0f} MiB used SWAP: {:>7.0f} MiB threads: {} {} {}'.format(datetime.now(), virtual_memory().total / 2**20, swap_memory().total / 2**20, virtual_memory().used / 2**20, swap_memory().used / 2**20, os.cpu_count(), platform.system(), platform.release()))
     g_rec_alg, g_user_ids_list = init()
     now = time.time()
     movies, movies_in_rec, users, users_in_rec, user_coverage, movie_coverage = calculate_coverage(g_rec_alg, g_user_ids_list)
