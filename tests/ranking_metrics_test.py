@@ -8,6 +8,7 @@ from datetime import datetime
 from multiprocessing import Process, Queue
 sys.path.append('./')
 from reco_engine import RecommendationAlgorithm
+from memory_profiler import memory_usage
 
 
 def init():
@@ -41,7 +42,7 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id
                 precision = intersection / len(pred_for_u)
                 precision_list.append(precision)
             if ep % 1000 == 999:
-                print(datetime.now(), '{:>5.1f}%'.format(ep * 100.0 / len(g_user_ids_list_for_ped)), (time.time() - now) / 1000)
+                print(datetime.now(), memory_usage(), 'MiB', '{:>5.1f}%'.format(ep * 100.0 / len(g_user_ids_list_for_ped)), (time.time() - now) / 1000)
                 now = time.time()
 
     print(datetime.now(), 'finish tread', id_thread)
