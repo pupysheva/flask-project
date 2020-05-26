@@ -35,7 +35,7 @@ def pred_thread(rec_alg, users, queue, id_thread):
                     else:
                         items_in_rec[rec] = 1
             if ep % 1000 == 999:
-                print(datetime.now(), memory_usage(), 'MiB', '{:>5.1f}%'.format(ep * 100.0 / len(users)), (time.time() - now) / 1000)
+                print(datetime.now(), memory_usage()[0], 'MiB', '{:>5.1f}%'.format(ep * 100.0 / len(users)), (time.time() - now) / 1000)
                 now = time.time()
     print(datetime.now(), 'finish tread', id_thread)
     queue.put((user_with_rec, items_in_rec))
