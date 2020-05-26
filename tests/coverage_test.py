@@ -21,7 +21,7 @@ def init():
 
 
 def pred_thread(rec_alg, users, queue, id_thread):
-    print(datetime.now(), 'finish tread', id_thread, memory_usage()[0], 'MiB')
+    print(datetime.now(), 'start tread', id_thread, memory_usage()[0], 'MiB')
     user_with_rec = []
     items_in_rec = {}
     now = time.time()
