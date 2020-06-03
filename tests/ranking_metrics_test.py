@@ -44,7 +44,7 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data
                 precision = intersection / len(pred_for_u)
                 precision_list.append(precision)
             if ep % 1000 == 999:
-                print('{} {:>5.1f}% VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB {:>8.6f}'.format(datetime.now(), ep * 100.0 / len(users), virtual_memory().used / 2**20, swap_memory().used / 2**20, (time.time() - now) / 1000))
+                print('{} {:>5.1f}% VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB {:>8.6f}'.format(datetime.now(), ep * 100.0 / len(g_user_ids_list_for_ped), virtual_memory().used / 2**20, swap_memory().used / 2**20, (time.time() - now) / 1000))
                 now = time.time()
 
     print('{} finish thread {} VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), id_thread, virtual_memory().used / 2**20, swap_memory().used / 2**20))
