@@ -66,11 +66,8 @@ def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_u
 
         g_pres_list.extend(precision_list)
         g_recall_list.extend(recall_list)
-
-        precision_mean = np.array(g_pres_list).mean()
-        recall_mean = np.array(g_recall_list).mean()
     print('{} finish calculate_precision_recall VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), virtual_memory().used / 2**20, swap_memory().used / 2**20))
-    return precision_mean, recall_mean
+    return g_pres_list, g_recall_list
 
 
 def main():
@@ -80,11 +77,16 @@ def main():
     precision, recall = calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data)
     print(time.time() - now)
 
-    print(precision, recall)
+    output = "";
+    output += "precision mean: {}\n".format(sum(precision)/len(precision))
+    output += "recall mean: {}\n".format(sum(recall)/len(recall))
+    output += "precision: {}\n".format(precision)
+    output += "recall: {}\n".format(recall)
+
+    print(output)
 
     file_p_r = open("./tests/ranking_metrics.log", "w")
-    file_p_r.write("precision: "+str(precision))
-    file_p_r.write("recall: "+str(recall))
+    file_p_r.write(output)
     file_p_r.close()
 
 
