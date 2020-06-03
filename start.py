@@ -62,22 +62,6 @@ def rated_by_user(user_id):
                            time=(time.time() - now))
 
 
-@app.route('/train', methods=["POST"])
-def train_model():
-    def thf():
-        print(datetime.now(), "train_model.t started")
-        q = Queue()
-        p = Process(target=module_for_retraining.train_model, args=(q, thread_id, from_pkl))
-        p.start()
-        global rec_alg
-        rec_alg = q.get()
-        print(datetime.now(), "train_model: Updated.")
-    thread_id = random.randint(0, 100000)
-    th = threading.Thread(target=thf, args=())
-    th.start()
-    return str(thread_id)
-
-
 # @app.route('/train', methods=["POST"])
 # def train_model():
 #     def thf():
@@ -103,6 +87,21 @@ def progress(thread_id):
     else:
         data = 0
     return str(data)
+
+
+def train_model():
+    def thf():
+        print(datetime.now(), "train_model.t started")
+        q = Queue()
+        p = Process(target=module_for_retraining.train_model, args=(q, thread_id, from_pkl))
+        p.start()
+        global rec_alg
+        rec_alg = q.get()
+        print(datetime.now(), "train_model: Updated.")
+    thread_id = random.randint(0, 100000)
+    th = threading.Thread(target=thf, args=())
+    th.start()
+    return str(thread_id)
 
 
 def train():

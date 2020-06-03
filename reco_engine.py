@@ -90,23 +90,35 @@ class RecommendationAlgorithm:
     def get_recommendation(self, user_id, if_need_print_time=True):
         now = time.time()
         if user_id in self.data_with_user_u_id_unique:
-            if user_id not in self.get_recommendation_cache:
-                all_movies = self.data_with_user_i_id_unique
-                recommendations = pd.DataFrame(list(product([user_id], all_movies)), columns=['u_id', 'i_id'])
-                # Получение прогноза оценок для user_id
-                pred_train = self.svd.predict(recommendations)
-                recommendations['prediction'] = pred_train
-                user_ratings = self.data_with_user[self.data_with_user.u_id == user_id]
-                user_ratings.columns = ['u_id', 'i_id', 'rating']
-                # Топ 20 фильмов для рекомендации
-                recommendations = self.movies_df[~self.movies_df['i_id'].isin(user_ratings['i_id'])]. \
-                    merge(pd.DataFrame(recommendations).reset_index(drop=True), how='inner', left_on='i_id',
-                          right_on='i_id'). \
-                    sort_values(by='prediction', ascending=False)
-                self.get_recommendation_cache[user_id] = recommendations.head(20)
+            # if user_id not in self.get_recommendation_cache:
+            #     all_movies = self.data_with_user_i_id_unique
+            #     recommendations = pd.DataFrame(list(product([user_id], all_movies)), columns=['u_id', 'i_id'])
+            #     # Получение прогноза оценок для user_id
+            #     pred_train = self.svd.predict(recommendations)
+            #     recommendations['prediction'] = pred_train
+            #     user_ratings = self.data_with_user[self.data_with_user.u_id == user_id]
+            #     user_ratings.columns = ['u_id', 'i_id', 'rating']
+            #     # Топ 20 фильмов для рекомендации
+            #     recommendations = self.movies_df[~self.movies_df['i_id'].isin(user_ratings['i_id'])]. \
+            #         merge(pd.DataFrame(recommendations).reset_index(drop=True), how='inner', left_on='i_id',
+            #               right_on='i_id'). \
+            #         sort_values(by='prediction', ascending=False)
+            #     self.get_recommendation_cache[user_id] = recommendations.head(20)
+            all_movies = self.data_with_user_i_id_unique
+            recommendations = pd.DataFrame(list(product([user_id], all_movies)), columns=['u_id', 'i_id'])
+            # Получение прогноза оценок для user_id
+            pred_train = self.svd.predict(recommendations)
+            recommendations['prediction'] = pred_train
+            user_ratings = self.data_with_user[self.data_with_user.u_id == user_id]
+            user_ratings.columns = ['u_id', 'i_id', 'rating']
+            # Топ 20 фильмов для рекомендации
+            recommendations = self.movies_df[~self.movies_df['i_id'].isin(user_ratings['i_id'])]. \
+                merge(pd.DataFrame(recommendations).reset_index(drop=True), how='inner', left_on='i_id',
+                      right_on='i_id'). \
+                sort_values(by='prediction', ascending=False)
             if if_need_print_time:
                 print('\nВремя алгоритма', time.time() - now)
-            return self.get_recommendation_cache[user_id]
+            return recommendations.head(20)
         else:
             return pd.DataFrame()
 
@@ -158,3 +170,4 @@ class RecommendationAlgorithm:
 
         self.svd = svd
         if thread is not None: thread.set_progress(1.00)
+        return (train_data, test_data)

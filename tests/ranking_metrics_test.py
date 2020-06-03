@@ -12,23 +12,23 @@ from reco_engine import RecommendationAlgorithm
 
 def init():
     g_rec_alg = RecommendationAlgorithm(from_pkl=True)
-    g_rec_alg.train_model()
+    train_data, test_data = g_rec_alg.train_model()
     # Получить список всех пользователей
-    g_user_ids_list_for_ped = g_rec_alg.test_data["u_id"].unique()
+    g_user_ids_list_for_ped = test_data["u_id"].unique()
     print(len(g_user_ids_list_for_ped))
     # средние оценки по юзерам
-    mean_rating_users = g_rec_alg.train_data.groupby(['u_id'], as_index=False)['rating'].mean()
-    return g_rec_alg, g_user_ids_list_for_ped, mean_rating_users
+    mean_rating_users = train_data.groupby(['u_id'], as_index=False)['rating'].mean()
+    return g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data
 
 
-def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id_thread):
+def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data, queue, id_thread):
     precision_list = []
     recall_list = []
     now = time.time()
     for ep, user in enumerate(g_user_ids_list_for_ped):
         if ep % os.cpu_count() == id_thread:
             mean_u = float(mean_rating_users[mean_rating_users["u_id"] == user]["rating"])
-            test_ratings = g_rec_alg.test_data[g_rec_alg.test_data["u_id"] == user]
+            test_ratings = test_data[test_data["u_id"] == user]
             id_films_liked_by_u = test_ratings[test_ratings["rating"] > mean_u]["i_id"].unique()
 
             pred_for_u = g_rec_alg.get_recommendation(user, if_need_print_time=False)["i_id"].unique()
@@ -48,12 +48,12 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, queue, id
     queue.put((precision_list, recall_list))
 
 
-def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users):
+def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data):
     q = Queue()
     g_pres_list = []
     g_recall_list = []
     for i in range(os.cpu_count()):
-        p = Process(target=pred_thread, args=(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, q, i))
+        p = Process(target=pred_thread, args=(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data, q, i))
         p.start()
     for i in range(os.cpu_count()):
         (precision_list, recall_list) = q.get()
@@ -68,9 +68,9 @@ def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_u
 
 def main():
     print("Количество потоков ", os.cpu_count())
-    g_rec_alg, g_user_ids_list_for_ped, mean_rating_users = init()
+    g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data = init()
     now = time.time()
-    precision, recall = calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users)
+    precision, recall = calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data)
     print(time.time() - now)
 
     print(precision, recall)
