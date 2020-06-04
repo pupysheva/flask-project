@@ -18,10 +18,10 @@ def init():
     print(len(g_user_ids_list_for_ped))
     # средние оценки по юзерам
     mean_rating_users = train_data.groupby(['u_id'], as_index=False)['rating'].mean()
-    return g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data
+    return g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, train_data, test_data
 
 
-def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data, queue, id_thread):
+def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, train_data, test_data, queue, id_thread):
     precision_list = []
     recall_list = []
     now = time.time()
@@ -31,7 +31,7 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data
             test_ratings = test_data[test_data["u_id"] == user]
             id_films_liked_by_u = test_ratings[test_ratings["rating"] > mean_u]["i_id"].unique()
 
-            pred_for_u = g_rec_alg.get_recommendation(user, if_need_print_time=False)["i_id"].unique()
+            pred_for_u = g_rec_alg.get_recommendation(user, df=train_data)["i_id"].unique()
 
             intersection = len(list(set(id_films_liked_by_u) & set(pred_for_u)))
 
@@ -41,19 +41,21 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data
                 precision = intersection / len(pred_for_u)
                 precision_list.append(precision)
             if ep % 1000 == 999:
-                print(datetime.now(), '{:>5.1f}%'.format(ep * 100.0 / len(g_user_ids_list_for_ped)), (time.time() - now) / 1000)
+                print(datetime.now(), '{:>5.1f}%'.format(ep * 100.0 / len(g_user_ids_list_for_ped)),
+                      (time.time() - now) / 1000)
                 now = time.time()
 
     print(datetime.now(), 'finish tread', id_thread)
     queue.put((precision_list, recall_list))
 
 
-def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data):
+def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, train_data, test_data):
     q = Queue()
     g_pres_list = []
     g_recall_list = []
     for i in range(os.cpu_count()):
-        p = Process(target=pred_thread, args=(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data, q, i))
+        p = Process(target=pred_thread, args=(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users,
+                                              train_data, test_data, q, i))
         p.start()
     for i in range(os.cpu_count()):
         (precision_list, recall_list) = q.get()
@@ -68,9 +70,10 @@ def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_u
 
 def main():
     print("Количество потоков ", os.cpu_count())
-    g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data = init()
+    g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, train_data, test_data = init()
     now = time.time()
-    precision, recall = calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, test_data)
+    precision, recall = calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users,
+                                                   train_data, test_data)
     print(time.time() - now)
 
     print(precision, recall)
@@ -86,24 +89,29 @@ if __name__ == "__main__":
 
 
 
+# import sys
+# import time
+# sys.path.append('./')
+# from reco_engine import RecommendationAlgorithm
 # g_rec_alg = RecommendationAlgorithm(from_pkl=True)
-# g_rec_alg.train_model(if_progress_need = False)
+# train_data, test_data = g_rec_alg.train_for_ranking_test()
+# print(train_data, test_data)
 # precision_list = []
 # recall_list = []
 # # средние оценки по юзерам
-# mean_rating_users = g_rec_alg.train_data.groupby(['u_id'], as_index=False)['rating'].mean()
-# g_user_ids_list_for_ped = g_rec_alg.test_data["u_id"].unique()
+# mean_rating_users = train_data.groupby(['u_id'], as_index=False)['rating'].mean()
+# g_user_ids_list_for_ped = test_data["u_id"].unique()
 # for j, user in enumerate(g_user_ids_list_for_ped):
 #     now = time.time()
 #     mean_u = float(mean_rating_users[mean_rating_users["u_id"] == user]["rating"])
 #     # print("mean_u", mean_u)
-#     test_ratings = g_rec_alg.test_data[g_rec_alg.test_data["u_id"] == user]
+#     test_ratings = test_data[test_data["u_id"] == user]
 #     id_films_liked_by_u = test_ratings[test_ratings["rating"] > mean_u]["i_id"].unique()
 #     # print("test_ratings", len(id_films_liked_by_u), test_ratings)
 #
 #
 #     pred_for_u = g_rec_alg.get_recommendation(user, if_need_print_time=False)["i_id"].unique()
-#     # print("pred_for_u", len(pred_for_u), pred_for_u)
+#     print("pred_for_u", len(pred_for_u), pred_for_u)
 #
 #     intersection = len(list(set(id_films_liked_by_u) & set(pred_for_u)))
 #     print(intersection)
@@ -117,5 +125,4 @@ if __name__ == "__main__":
 #         precision = intersection/len(pred_for_u)
 #         precision_list.append(precision)
 #     print(user, recall, precision, time.time() - now)
-
 

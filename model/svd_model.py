@@ -166,7 +166,7 @@ class SVD():
         return beginning
 
 
-    def _print_metrics(self, beginning_time, mean_sqrt_error, root_mean_square_error, mean_abs_err):
+    def _print_metrics(self, beginning_time, mean_sqrt_error = None, root_mean_square_error = None, mean_abs_err = None):
         end = time.time()
         if mean_sqrt_error is not None:
             print('val_mse: {:.3f}'.format(mean_sqrt_error), end=' - ')

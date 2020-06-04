@@ -87,7 +87,13 @@ class RecommendationAlgorithm:
         rated_df = rated_df.loc[rated_df.u_id == user_id].sort_values(by='rating', ascending=False)
         return rated_df
 
-    def get_recommendation(self, user_id, if_need_print_time=True):
+    def get_recommendation(self, user_id, df=None, if_need_print_time=True):
+        if df is None:
+            self.recoms(user_id, self.data_with_user, if_need_print_time)
+        else:
+            self.recoms(user_id, df, if_need_print_time, if_need_print_time)
+
+    def recoms(self, user_id, df, if_need_print_time=True):
         now = time.time()
         if user_id in self.data_with_user_u_id_unique:
             # if user_id not in self.get_recommendation_cache:
@@ -109,7 +115,7 @@ class RecommendationAlgorithm:
             # Получение прогноза оценок для user_id
             pred_train = self.svd.predict(recommendations)
             recommendations['prediction'] = pred_train
-            user_ratings = self.data_with_user[self.data_with_user.u_id == user_id]
+            user_ratings = df[df.u_id == user_id]
             user_ratings.columns = ['u_id', 'i_id', 'rating']
             # Топ 20 фильмов для рекомендации
             recommendations = self.movies_df[~self.movies_df['i_id'].isin(user_ratings['i_id'])]. \
@@ -170,4 +176,31 @@ class RecommendationAlgorithm:
 
         self.svd = svd
         if thread is not None: thread.set_progress(1.00)
-        return (train_data, test_data)
+        return train_data, test_data
+
+    def train_for_ranking_test(self):
+        # Деление на выборки специально для ranking_test
+        l = self.data_with_user_u_id_unique
+        now = time.time()
+        for i,u in enumerate(l):
+            print(i)
+            u_rated = self.data_with_user[self.data_with_user["u_id"] == u]
+            user_train = u_rated.head(12)
+            mask = u_rated['i_id'].isin(user_train["i_id"].unique())
+            user_test = u_rated[~mask]
+            if i == 0:
+                train_df = user_train
+                test_df = user_test
+            else:
+                train_df = train_df.append(user_train, ignore_index=True)
+                test_df = test_df.append(user_test, ignore_index=True)
+        print(time.time()-now)
+        train_df.to_pickle("./tests/train.pkl")
+        test_df.to_pickle("./tests/test.pkl")
+        learning_rate, reg, features = (0.02, 0.015, 64)
+        epochs = 10
+        svd = SVD(learning_rate=learning_rate, regularization=reg, n_epochs=epochs, n_factors=features,
+                  min_rating=0.5, max_rating=5)
+        svd.fit(Data=train_df)
+        self.svd = svd
+        return train_df, test_df
