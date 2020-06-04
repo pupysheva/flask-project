@@ -9,6 +9,8 @@ from datetime import datetime
 from multiprocessing import Process, Queue
 sys.path.append('./')
 from reco_engine import RecommendationAlgorithm
+from psutil import virtual_memory, swap_memory
+import platform
 
 
 def init():
@@ -20,6 +22,7 @@ def init():
 
 
 def pred_thread(rec_alg, users, queue, id_thread):
+    print('{} start thread {} VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), id_thread, virtual_memory().used / 2**20, swap_memory().used / 2**20))
     user_with_rec = []
     items_in_rec = {}
     now = time.time()
@@ -34,13 +37,14 @@ def pred_thread(rec_alg, users, queue, id_thread):
                     else:
                         items_in_rec[rec] = 1
             if ep % 1000 == 999:
-                print(datetime.now(), '{:>5.1f}%'.format(ep * 100.0 / len(users)), (time.time() - now) / 1000)
+                print('{} {:>5.1f}% VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB {:>8.6f}'.format(datetime.now(), ep * 100.0 / len(users), virtual_memory().used / 2**20, swap_memory().used / 2**20, (time.time() - now) / 1000))
                 now = time.time()
-    print(datetime.now(), 'finish tread', id_thread)
+    print('{} finish thread {} VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), id_thread, virtual_memory().used / 2**20, swap_memory().used / 2**20))
     queue.put((user_with_rec, items_in_rec))
 
 
 def calculate_coverage(g_rec_alg, g_user_ids_list):
+    print('{} start calculate_coverage VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), virtual_memory().used / 2**20, swap_memory().used / 2**20))
     g_items_in_rec = {}
     g_user_with_rec = []
     q = Queue()
@@ -67,10 +71,12 @@ def calculate_coverage(g_rec_alg, g_user_ids_list):
 
     user_coverage = float(no_users_in_rec / no_users)
     movie_coverage = float(no_movies_in_rec / no_movies)
+    print('{} finish calculate_coverage VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), virtual_memory().used / 2**20, swap_memory().used / 2**20))
     return no_movies, no_movies_in_rec, no_users, no_users_in_rec, user_coverage, movie_coverage
 
 
 def main():
+    print('{} main coverage total VIRT: {:>6.0f} MiB total SWAP: {:>7.0f} MiB used VIRT: {:>6.0f} MiB used SWAP: {:>7.0f} MiB threads: {} {} {}'.format(datetime.now(), virtual_memory().total / 2**20, swap_memory().total / 2**20, virtual_memory().used / 2**20, swap_memory().used / 2**20, os.cpu_count(), platform.system(), platform.release()))
     g_rec_alg, g_user_ids_list = init()
     now = time.time()
     movies, movies_in_rec, users, users_in_rec, user_coverage, movie_coverage = calculate_coverage(g_rec_alg, g_user_ids_list)
