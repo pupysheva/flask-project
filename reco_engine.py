@@ -91,7 +91,7 @@ class RecommendationAlgorithm:
         if df is None:
             self.recoms(user_id, self.data_with_user, if_need_print_time)
         else:
-            self.recoms(user_id, df, if_need_print_time, if_need_print_time)
+            self.recoms(user_id, df, if_need_print_time)
 
     def recoms(self, user_id, df, if_need_print_time=True):
         now = time.time()
