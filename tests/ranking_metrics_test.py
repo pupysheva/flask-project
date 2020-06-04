@@ -73,15 +73,23 @@ def main():
     print('{} main ranking_metrics total VIRT: {:>6.0f} MiB total SWAP: {:>7.0f} MiB used VIRT: {:>6.0f} MiB used SWAP: {:>7.0f} MiB threads: {} {} {}'.format(datetime.now(), virtual_memory().total / 2**20, swap_memory().total / 2**20, virtual_memory().used / 2**20, swap_memory().used / 2**20, os.cpu_count(), platform.system(), platform.release()))
     g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, train_data, test_data = init()
     now = time.time()
-    precision, recall = calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users,
+    precision_list, recall_list = calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users,
                                                    train_data, test_data)
     print(time.time() - now)
 
+
+
     output = "";
-    output += "precision mean: {}\n".format(sum(precision)/len(precision))
-    output += "recall mean: {}\n".format(sum(recall)/len(recall))
-    output += "precision: {}\n".format(precision)
-    output += "recall: {}\n".format(recall)
+    output += "Количество в precision_list: {}\n".format(len(precision_list))
+    output += "Количество ненулевых в precision_list: {}\n".format(np.count_nonzero(np.array(precision_list)))
+    output += "Количество в recall_list: {}\n".format(len(recall_list))
+    output += "Количество ненулевых в recall_list: {}\n".format(np.count_nonzero(np.array(recall_list)))
+    output += "precision mean: {}\n".format(sum(precision_list)/len(precision_list))
+    output += "recall mean: {}\n".format(sum(recall_list)/len(recall_list))
+    output += "precision mean NUMPY: {}\n".format(np.array(precision_list).mean())
+    output += "recall mean NUMPY: {}\n".format(np.array(recall_list).mean())
+    output += "precision_list: {}\n".format(precision_list)
+    output += "recall_list: {}\n".format(recall_list)
 
     print(output)
 
