@@ -31,7 +31,7 @@ def logline(message = "", method = None):
     global oldprint
     oldprint = history[method]
     newprint = datetime.now()
-    print('{} [+{}] VIRT: {:>6.0f} MiB; SWAP: {:>7.0f} MiB; CPU: {:>5.1f} %{}: {}'.format(datetime.now(), newprint - oldprint, virtual_memory().used / 2**20, swap_memory().used / 2**20, cpu_percent(), '; {}'.format(method.__name__) if method is not None else "", message))
+    print('{} [+{}] VIRT: {:>6.0f} MiB; SWAP: {:>7.0f} MiB; CPU: {:>5.1f} %{}: {}'.format(datetime.now(), newprint - oldprint, virtual_memory().used / 2**20, swap_memory().used / 2**20, cpu_percent(), '; {}'.format(method.__name__ if hasattr(method, '__name__') else str(method)) if method is not None else "", message))
     history[method] = datetime.now()
 def loglines(messages = [], method = None):
     f = True
