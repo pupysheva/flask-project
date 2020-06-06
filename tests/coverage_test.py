@@ -1,28 +1,24 @@
 #!/usr/bin/python
 # utf-8
-import numpy as np
-import pandas as pd
 import time
 import sys
 import os
-from datetime import datetime
 from multiprocessing import Process, Queue
 sys.path.append('./')
 from reco_engine import RecommendationAlgorithm
-from psutil import virtual_memory, swap_memory
-import platform
+from logger import log
 
 
 def init():
     g_rec_alg = RecommendationAlgorithm(from_pkl=True)
     # Получить список всех пользователей
     g_user_ids_list = g_rec_alg.data_with_user["u_id"].unique()
-    print(len(g_user_ids_list))
+    log('len(g_user_ids_list): {} users'.format(len(g_user_ids_list)), init)
     return g_rec_alg, g_user_ids_list
 
 
 def pred_thread(rec_alg, users, queue, id_thread):
-    print('{} start thread {} VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), id_thread, virtual_memory().used / 2**20, swap_memory().used / 2**20))
+    log('start thread № {}'.format(id_thread), pred_thread)
     user_with_rec = []
     items_in_rec = {}
     now = time.time()
@@ -36,15 +32,15 @@ def pred_thread(rec_alg, users, queue, id_thread):
                         items_in_rec[rec] += 1
                     else:
                         items_in_rec[rec] = 1
-            if ep % 1000 == 999:
-                print('{} {:>5.1f}% VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB {:>8.6f}'.format(datetime.now(), ep * 100.0 / len(users), virtual_memory().used / 2**20, swap_memory().used / 2**20, (time.time() - now) / 1000))
-                now = time.time()
-    print('{} finish thread {} VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), id_thread, virtual_memory().used / 2**20, swap_memory().used / 2**20))
+        if ep % 1000 == 999:
+            log('[{}]: {:>5.1f} % {:>8.6f} seconds/user'.format(id_thread, ep * 100.0 / len(users), (time.time() - now) / 1000), pred_thread)
+            now = time.time()
+    log('finish thread № {}'.format(id_thread), pred_thread)
     queue.put((user_with_rec, items_in_rec))
 
 
 def calculate_coverage(g_rec_alg, g_user_ids_list):
-    print('{} start calculate_coverage VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), virtual_memory().used / 2**20, swap_memory().used / 2**20))
+    log('start', calculate_coverage)
     g_items_in_rec = {}
     g_user_with_rec = []
     q = Queue()
@@ -59,37 +55,35 @@ def calculate_coverage(g_rec_alg, g_user_ids_list):
                 g_items_in_rec[key] += value
             else:
                 g_items_in_rec[key] = value
-    print("g_items_in_rec", g_items_in_rec, len(g_items_in_rec.items()))
+    log({'g_items_in_rec': g_items_in_rec, 'len(g_items_in_rec)': len(g_items_in_rec)}, calculate_coverage)
     no_movies = 27278
-    no_movies_in_rec = len(g_items_in_rec.items())
+    no_movies_in_rec = len(g_items_in_rec)
 
     no_users = len(g_user_ids_list)
     no_users_in_rec = len(g_user_with_rec)
 
-    print("no_movies_in_rec  ", no_movies_in_rec)
-    print("no_users_in_rec ", no_users_in_rec)
+    log({'no_movies_in_rec': no_movies_in_rec, 'no_users_in_rec': no_users_in_rec}, calculate_coverage)
 
     user_coverage = float(no_users_in_rec / no_users)
     movie_coverage = float(no_movies_in_rec / no_movies)
-    print('{} finish calculate_coverage VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), virtual_memory().used / 2**20, swap_memory().used / 2**20))
+    log('finish', calculate_coverage)
     return no_movies, no_movies_in_rec, no_users, no_users_in_rec, user_coverage, movie_coverage
 
 
 def main():
-    print('{} main coverage total VIRT: {:>6.0f} MiB total SWAP: {:>7.0f} MiB used VIRT: {:>6.0f} MiB used SWAP: {:>7.0f} MiB threads: {} {} {}'.format(datetime.now(), virtual_memory().total / 2**20, swap_memory().total / 2**20, virtual_memory().used / 2**20, swap_memory().used / 2**20, os.cpu_count(), platform.system(), platform.release()))
     g_rec_alg, g_user_ids_list = init()
     now = time.time()
     movies, movies_in_rec, users, users_in_rec, user_coverage, movie_coverage = calculate_coverage(g_rec_alg, g_user_ids_list)
-    print(time.time() - now)
-
-    print(user_coverage, movie_coverage)
-
-    file_coverage = open("./tests/coverage_result.log", "w")
-    file_coverage.write("movies: "+str(movies)+"; movies_in_rec:"+str(movies_in_rec)+"\n")
-    file_coverage.write("users: "+str(users)+"; users_in_rec:"+str(users_in_rec)+"\n")
-    file_coverage.write("user_coverage: "+str(user_coverage)+"; movie_coverage:"+str(movie_coverage)+"\n")
-
-    file_coverage.close()
+    log(time.time() - now, main)
+    output = {'movies': str(movies),
+              'movies_in_rec': str(movies_in_rec),
+              'users': str(users),
+              'users_in_rec': str(users_in_rec),
+              'user_coverage': str(user_coverage),
+              'movie_coverage': str(movie_coverage)}
+    log(output, main)
+    with open("./tests/coverage_result.log", "w") as file_coverage:
+        file_coverage.write('\n'.join(['{}: {}'.format(key, value) for (key, value) in output.items()]))
 
 
 if __name__ == "__main__":
