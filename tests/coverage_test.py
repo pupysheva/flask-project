@@ -83,7 +83,7 @@ def main():
               'movie_coverage': str(movie_coverage)}
     log(output, main)
     with open("./tests/coverage_result.log", "w") as file_coverage:
-        file_coverage.write('\n'.join(['{}: {}'.format(key, value) for (key, value) in output.items()]))
+        file_coverage.write('\n'.join(['{}: {}'.format(key, value) for (key, value) in output.items()]) + '\n')
 
 
 if __name__ == "__main__":
