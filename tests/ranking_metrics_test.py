@@ -1,15 +1,12 @@
 #!/usr/bin/python
 # utf-8
-import numpy as np
 import time
 import sys
 import os
-from datetime import datetime
 from multiprocessing import Process, Queue
 sys.path.append('./')
 from reco_engine import RecommendationAlgorithm
-from psutil import virtual_memory, swap_memory
-import platform
+from logger import log
 
 
 def init():
@@ -17,14 +14,14 @@ def init():
     train_data, test_data = g_rec_alg.train_model()
     # Получить список всех пользователей
     g_user_ids_list_for_ped = test_data["u_id"].unique()
-    print(len(g_user_ids_list_for_ped))
+    log('len(g_user_ids_list_for_ped): {} users'.format(len(g_user_ids_list_for_ped)), init)
     # средние оценки по юзерам
     mean_rating_users = train_data.groupby(['u_id'], as_index=False)['rating'].mean()
     return g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, train_data, test_data
 
 
 def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, train_data, test_data, queue, id_thread):
-    print('{} start thread {} VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), id_thread, virtual_memory().used / 2**20, swap_memory().used / 2**20))
+    log('start thread № {}'.format(id_thread), pred_thread)
     precision_list = []
     recall_list = []
     now = time.time()
@@ -43,16 +40,15 @@ def pred_thread(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, train_dat
                 recall_list.append(recall)
                 precision = intersection / len(pred_for_u)
                 precision_list.append(precision)
-            if ep % 1000 == 999:
-                print('{} {:>5.1f}% VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB {:>8.6f}'.format(datetime.now(), ep * 100.0 / len(g_user_ids_list_for_ped), virtual_memory().used / 2**20, swap_memory().used / 2**20, (time.time() - now) / 1000))
-                now = time.time()
-
-    print('{} finish thread {} VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), id_thread, virtual_memory().used / 2**20, swap_memory().used / 2**20))
+        if ep % 1000 == 999:
+            log('[{}] {:>5.1f} % {:>8.6f} seconds/user'.format(id_thread, ep * 100.0 / len(g_user_ids_list_for_ped), (time.time() - now) / 1000), pred_thread)
+            now = time.time()
+    log('finish thread № {}'.format(id_thread), pred_thread)
     queue.put((precision_list, recall_list))
 
 
 def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, train_data, test_data):
-    print('{} start calculate_precision_recall VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), virtual_memory().used / 2**20, swap_memory().used / 2**20))
+    log('start', calculate_precision_recall)
     q = Queue()
     g_pres_list = []
     g_recall_list = []
@@ -65,29 +61,29 @@ def calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_u
 
         g_pres_list.extend(precision_list)
         g_recall_list.extend(recall_list)
-    print('{} finish calculate_precision_recall VIRT: {:>6.0f} MiB SWAP: {:>7.0f} MiB'.format(datetime.now(), virtual_memory().used / 2**20, swap_memory().used / 2**20))
+    log('finish', calculate_precision_recall)
     return g_pres_list, g_recall_list
 
 
 def main():
-    print('{} main ranking_metrics total VIRT: {:>6.0f} MiB total SWAP: {:>7.0f} MiB used VIRT: {:>6.0f} MiB used SWAP: {:>7.0f} MiB threads: {} {} {}'.format(datetime.now(), virtual_memory().total / 2**20, swap_memory().total / 2**20, virtual_memory().used / 2**20, swap_memory().used / 2**20, os.cpu_count(), platform.system(), platform.release()))
+    log('start', main)
     g_rec_alg, g_user_ids_list_for_ped, mean_rating_users, train_data, test_data = init()
     now = time.time()
     precision, recall = calculate_precision_recall(g_rec_alg, g_user_ids_list_for_ped, mean_rating_users,
                                                    train_data, test_data)
-    print(time.time() - now)
+    log(time.time() - now, main)
 
-    output = "";
-    output += "precision mean: {}\n".format(sum(precision)/len(precision))
-    output += "recall mean: {}\n".format(sum(recall)/len(recall))
-    output += "precision: {}\n".format(precision)
-    output += "recall: {}\n".format(recall)
+    output = {
+        'precision mean': sum(precision)/len(precision),
+        'recall mean': sum(recall)/len(recall),
+        'precision': precision,
+        'recall': recall
+    };
 
-    print(output)
+    log(output, main)
 
-    file_p_r = open("./tests/ranking_metrics.log", "w")
-    file_p_r.write(output)
-    file_p_r.close()
+    with open("./tests/ranking_metrics.log", "w") as file_p_r:
+        file_p_r.write('\n'.join(['{}: {}'.format(key, value) for (key, value) in output.items()]) + '\n')
 
 
 if __name__ == "__main__":
