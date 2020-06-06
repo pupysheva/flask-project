@@ -89,9 +89,10 @@ class RecommendationAlgorithm:
 
     def get_recommendation(self, user_id, df=None, if_need_print_time=True):
         if df is None:
-            self.recoms(user_id, self.data_with_user, if_need_print_time)
+            res = self.recoms(user_id, self.data_with_user, if_need_print_time)
         else:
-            self.recoms(user_id, df, if_need_print_time, if_need_print_time)
+            res = self.recoms(user_id, df, if_need_print_time)
+        return res
 
     def recoms(self, user_id, df, if_need_print_time=True):
         now = time.time()
