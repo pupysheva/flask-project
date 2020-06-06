@@ -5,8 +5,9 @@ from os import cpu_count
 from datetime import datetime
 from platform import system, release
 from collections.abc import Iterable
+from collections import defaultdict
 
-oldprint = datetime.now()
+history = defaultdict(lambda: datetime.now())
 
 def startup():
     log({'total VIRT': '{:.0f} MiB'.format(virtual_memory().total / 2**20),
@@ -28,9 +29,10 @@ def log(message = "", method = None):
         logline(str(message), method)
 def logline(message = "", method = None):
     global oldprint
+    oldprint = history[method]
     newprint = datetime.now()
     print('{} [+{}] VIRT: {:>6.0f} MiB; SWAP: {:>7.0f} MiB; CPU: {:>5.1f} %{}: {}'.format(datetime.now(), newprint - oldprint, virtual_memory().used / 2**20, swap_memory().used / 2**20, cpu_percent(), '; {}'.format(method.__name__) if method is not None else "", message))
-    oldprint = datetime.now()
+    history[method] = datetime.now()
 def loglines(messages = [], method = None):
     f = True
     for m in filter(lambda s: s is not None and s != "", messages):
