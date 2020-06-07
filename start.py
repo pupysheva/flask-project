@@ -26,7 +26,7 @@ import tempfile
 import threading
 import time
 import os
-from datetime import datetime
+from logger import log
 
 
 app = Flask(__name__, static_url_path='',
@@ -91,13 +91,13 @@ def progress(thread_id):
 
 def train_model():
     def thf():
-        print(datetime.now(), "train_model.t started")
+        log('train_model.t started', thf)
         q = Queue()
         p = Process(target=module_for_retraining.train_model, args=(q, thread_id, from_pkl))
         p.start()
         global rec_alg
         rec_alg = q.get()
-        print(datetime.now(), "train_model: Updated.")
+        log('train_model: Updated.', thf)
     thread_id = random.randint(0, 100000)
     th = threading.Thread(target=thf, args=())
     th.start()
