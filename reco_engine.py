@@ -4,23 +4,23 @@ import pickle
 import pandas as pd
 import numpy as np
 import time
-from datetime import datetime
 from itertools import product
 from sklearn.metrics import mean_squared_error, mean_absolute_error
 from model.pkl_generator import generate_if_need
 from sqlalchemy import create_engine, DateTime, Integer, String, Float
 from model import SVD
+from logger import log
 
 
 class RecommendationAlgorithm:
     def __init__(self, from_pkl):
         if from_pkl:
-            print("read in PKL ...")
+            log('read in PKL ...', __init__)
             now = time.time()
             (self.data_with_user, self.movies_df, self.svd) = generate_if_need()
-            print('\n Время чтения PKL файлов:', time.time() - now)
+            log('Время чтения PKL файлов {} seconds'.format(time.time() - now), __init__)
         else:
-            print("read in DB ...")
+            log("read in DB ...", __init__)
             now = time.time()
             db_url = 'sqlite:///./movies_recom_db.db'
             engine = create_engine(db_url)
@@ -45,10 +45,10 @@ class RecommendationAlgorithm:
                 for chunk_df in df_generator:
                     list_of_dfs.append(chunk_df)
                 self.data_with_user = pd.concat(list_of_dfs, ignore_index=True)
-                print('\nВремя соединения chunk`ов', time.time() - now_r)
+                log('Время соединения chunk`ов: {} seconds'.format(time.time() - now_r), __init__)
 
             self.svd = generate_if_need(movies_df=self.movies_df, data_with_user=self.data_with_user)[2]
-            print('\nВремя чтения BD:', time.time() - now)
+            log('Время чтения DB: {} seconds'.format(time.time() - now), __init__)
         self.data_with_user_i_id_unique = self.data_with_user.i_id.unique()
         self.get_recommendation_cache = {}
         self.data_with_user_u_id_unique = self.data_with_user.u_id.unique()
@@ -124,36 +124,39 @@ class RecommendationAlgorithm:
                       right_on='i_id'). \
                 sort_values(by='prediction', ascending=False)
             if if_need_print_time:
-                print('\nВремя алгоритма', time.time() - now)
+                log('Время алгоритма {} seconds'.format(time.time() - now), recoms)
             return recommendations.head(20)
         else:
             return pd.DataFrame()
 
     def train_model(self, thread=None):
-        print(datetime.now(), 'Start train...')
+        log('Start train...', train_model)
         if thread is not None: thread.set_progress(0.01)
-        print(datetime.now(), 'Progress set 0.01.')
+        log('Progress set 0.01.', train_model)
 
         train_data = self.data_with_user.sample(frac=0.8)
         if thread is not None: thread.set_progress(0.09)
-        print(datetime.now(), 'self.data_with_user.sample(frac=0.8)')
+        log('self.data_with_user.sample(frac=0.8)', train_model)
         val_data = self.data_with_user.drop(train_data.index.tolist()).sample(frac=0.5, random_state=8)
         if thread is not None: thread.set_progress(0.19)
-        print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)')
+        log('self.data_with_user.drop(train_user.index.tolist()).sample(frac=0.5, random_state=8)', train_model)
         test_data = self.data_with_user.drop(train_data.index.tolist()).drop(val_data.index.tolist())
-        print(datetime.now(), 'self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())')
+        log('self.data_with_user.drop(train_user.index.tolist()).drop(val_user.index.tolist())', train_model)
 
-        print("Деление на выборки: ", len(np.unique(self.data_with_user["u_id"])), len(np.unique(train_data["u_id"])),
-              len(np.unique(test_data["u_id"])))
+        log('Деление на выборки: {} {} {}'.format(
+            len(np.unique(self.data_with_user["u_id"])),
+            len(np.unique(train_data["u_id"])),
+            len(np.unique(test_data["u_id"]))),
+        train_model)
 
         learning_rate, reg, features = (0.02, 0.015, 64)
         epochs = 10
 
         if thread is not None: thread.set_progress(0.25)
-        print(datetime.now(), 'start SVD create')
+        log('start SVD create', train_model)
         svd = SVD(learning_rate=learning_rate, regularization=reg, n_epochs=epochs, n_factors=features,
                   min_rating=0.5, max_rating=5)
-        print(datetime.now(), 'finish SVD create. Start fit...')
+        log('finish SVD create. Start fit...', train_model)
 
         if thread is not None:
             thread.set_progress(0.50)
@@ -161,19 +164,19 @@ class RecommendationAlgorithm:
         else:
             svd.fit(Data=train_data, Data_val=val_data)
 
-        print(datetime.now(), 'finish svd.fit. Start predict')
+        log('finish svd.fit. Start predict', train_model)
 
         if thread is not None: thread.set_progress(0.75)
         pred = svd.predict(test_data)
-        print(datetime.now(), 'finish svd.predict. Start mean and sqrt')
+        log('finish svd.predict. Start mean and sqrt', train_model)
         if thread is not None: thread.set_progress(0.99)
         mae = mean_absolute_error(test_data["rating"], pred)
         mse = mean_squared_error(test_data["rating"], pred)
         rmse = np.sqrt(mse)
-        print(datetime.now(), 'finish print results...')
-        print("Test MAE:  {:.2f}".format(mae))
-        print("Test RMSE: {:.2f}".format(rmse))
-        print('{} factors, {} lr, {} reg'.format(learning_rate, reg, features))
+        log('finish print results...', train_model)
+        log("Test MAE:  {:.2f}".format(mae), train_model)
+        log("Test RMSE: {:.2f}".format(rmse), train_model)
+        log('{} factors, {} lr, {} reg'.format(learning_rate, reg, features), train_model)
 
         self.svd = svd
         if thread is not None: thread.set_progress(1.00)
@@ -184,7 +187,7 @@ class RecommendationAlgorithm:
         l = self.data_with_user_u_id_unique
         now = time.time()
         for i,u in enumerate(l):
-            print(i)
+            log(i, train_for_ranking_test)
             u_rated = self.data_with_user[self.data_with_user["u_id"] == u]
             user_train = u_rated.head(12)
             mask = u_rated['i_id'].isin(user_train["i_id"].unique())
@@ -195,7 +198,7 @@ class RecommendationAlgorithm:
             else:
                 train_df = train_df.append(user_train, ignore_index=True)
                 test_df = test_df.append(user_test, ignore_index=True)
-        print(time.time()-now)
+        log(time.time() - now, train_for_ranking_test)
         train_df.to_pickle("./tests/train.pkl")
         test_df.to_pickle("./tests/test.pkl")
         learning_rate, reg, features = (0.02, 0.015, 64)
