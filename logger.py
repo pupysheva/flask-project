@@ -7,6 +7,7 @@ from platform import system, release
 from collections.abc import Iterable
 from collections import defaultdict
 from threading import Timer
+from contextlib import contextmanager
 
 history = defaultdict(lambda: datetime.now())
 settings = {
@@ -35,6 +36,18 @@ def startup():
              'threads': cpu_count(),
              'system': '{} {}'.format(system(), release())
         }, startup)
+@contextmanager
+def logspam(message = '', methodmark = None, delay = 0):
+    if isinstance(delay, timedelta):
+        delay = delay.total_seconds()
+    needWork = True
+    def timerbody():
+        if needWork:
+            log(message, methodmark)
+            Timer(delay, timerbody).start()
+    Timer(delay, timerbody).start()
+    yield None
+    needWork = False
 def logp(message = '', methodmark = None, delay = 0):
     if isinstance(delay, timedelta):
         delay = delay.total_seconds()
