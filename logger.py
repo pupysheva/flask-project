@@ -1,43 +1,80 @@
 #!/usr/bin/python
 # utf-8
 from psutil import cpu_percent, virtual_memory, swap_memory
-from os import cpu_count
+from os import cpu_count, environ
 from datetime import datetime
 from platform import system, release
 from collections.abc import Iterable
 from collections import defaultdict
 
 history = defaultdict(lambda: datetime.now())
+settings = {
+    'startup': True,
+    'time': True,
+    'stopwatch': True,
+    'virt': True,
+    'swap': True,
+    'cpu': True,
+    'methodmark': True
+}
+
+def initsettings():
+    def bool(s):
+        return s.upper() in ['TRUE', '1', 'T', 'Y', 'YES', 'YEAH', 'YUP', 'CERTAINLY', 'UH-HUH']
+    for k in settings.keys():
+        env = environ.get('FP_LOG_{}'.format(k.upper()))
+        if env is not None:
+            settings[k] = bool(env)
 
 def startup():
-    log({'total VIRT': '{:.0f} MiB'.format(virtual_memory().total / 2**20),
-         'total SWAP': '{:.0f} MiB'.format(swap_memory().total / 2**20),
-         'threads': cpu_count(),
-         'system': '{} {}'.format(system(), release())
-    }, startup)
-def log(message = "", method = None):
+    initsettings()
+    if settings['startup']:
+        log({'total VIRT': '{:.0f} MiB'.format(virtual_memory().total / 2**20),
+             'total SWAP': '{:.0f} MiB'.format(swap_memory().total / 2**20),
+             'threads': cpu_count(),
+             'system': '{} {}'.format(system(), release())
+        }, startup)
+def log(message = '', methodmark = None):
     if isinstance(message, str):
         message = message.split('\n')
-        loglines(message, method)
+        loglines(message, methodmark)
     elif isinstance(message, dict):
         for pair in message.items():
-            logline('{}: {}'.format(pair[0], pair[1]), method)
+            logline('{}: {}'.format(pair[0], pair[1]), methodmark)
     elif isinstance(message, Iterable):
         for m in message:
-            log(m, method)
+            log(m, methodmark)
     else:
-        logline(str(message), method)
-def logline(message = "", method = None):
-    global oldprint
-    oldprint = history[method]
+        logline(str(message), methodmark)
+def logline(message = '', methodmark = None):
+    oldprint = history[methodmark]
     newprint = datetime.now()
-    print('{} [+{}] VIRT: {:>6.0f} MiB; SWAP: {:>7.0f} MiB; CPU: {:>5.1f} %{}: {}'.format(datetime.now(), newprint - oldprint, virtual_memory().used / 2**20, swap_memory().used / 2**20, cpu_percent(), '; {}'.format(method.__name__ if hasattr(method, '__name__') else str(method)) if method is not None else "", message))
-    history[method] = datetime.now()
-def loglines(messages = [], method = None):
+    results = []
+    if settings['time']:
+        results += [str(datetime.now())]
+    if settings['stopwatch']:
+        results += ['[+{}]'.format(newprint - oldprint)]
+    if settings['virt']:
+        results += ['VIRT: {:>6.0f} MiB'.format(virtual_memory().used / 2**20)]
+    if settings['swap']:
+        results += ['SWAP: {:>7.0f} MiB'.format(swap_memory().used / 2**20)]
+    if settings['cpu']:
+        results += ['CPU: {:>5.1f} %'.format(cpu_percent())]
+    if settings['methodmark'] and methodmark is not None:
+        results += [methodmark.__name__ if hasattr(methodmark, '__name__') else str(methodmark)]
+    output = '; '.join(results)
+    if message is not None and len(message) > 0:
+        if len(output) > 0:
+            output = '{}: {}'.format(output, message)
+        else:
+            output = message
+    print(output)
+    history[methodmark] = datetime.now()
+def loglines(messages = [], methodmark = None):
     f = True
-    for m in filter(lambda s: s is not None and s != "", messages):
+    for m in filter(lambda s: s is not None and s != '', messages):
         f = False
-        logline(m, method)
+        logline(m, methodmark)
     if f:
-        logline("", method)
+        logline('', methodmark)
 startup()
