@@ -8,7 +8,7 @@ import zipfile
 
 import numpy as np
 import pandas as pd
-from logger import log
+from logger import log, logp
 
 
 __all__ = [
@@ -63,6 +63,7 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
     if target_df == "ratings" and os.path.exists(csv_path_ratings):
         if not os.path.exists(pkl_path_ratings):
             log('read csv... {}'.format(csv_path_ratings), fetch_ml_ratings)
+            logp('reading csv...?'.format(csv_path_ratings), fetch_ml_ratings, 60)
             df = ml_ratings_csv_to_df(csv_path_ratings, variant)
             log('save csv.pkl... {}'.format(pkl_path_ratings), fetch_ml_ratings)
             df.to_pickle(pkl_path_ratings)

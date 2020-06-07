@@ -2,10 +2,11 @@
 # utf-8
 from psutil import cpu_percent, virtual_memory, swap_memory
 from os import cpu_count, environ
-from datetime import datetime
+from datetime import datetime, timedelta
 from platform import system, release
 from collections.abc import Iterable
 from collections import defaultdict
+from threading import Timer
 
 history = defaultdict(lambda: datetime.now())
 settings = {
@@ -34,6 +35,10 @@ def startup():
              'threads': cpu_count(),
              'system': '{} {}'.format(system(), release())
         }, startup)
+def logp(message = '', methodmark = None, delay = 0):
+    if isinstance(delay, timedelta):
+        delay = delay.total_seconds()
+    Timer(delay, lambda: log(message, methodmark)).start()
 def log(message = '', methodmark = None):
     if isinstance(message, str):
         message = message.split('\n')
