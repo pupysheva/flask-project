@@ -27,7 +27,8 @@ def priority(i):
             os.nice(i)
             pass
     except PermissionError as e:
-        print("Ignore nice:", e)
+        from logger import log
+        log('Ignore nice: {}'.format(e), priority)
 
 
 def lowpriority():
