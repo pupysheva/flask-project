@@ -10,9 +10,11 @@ import numpy as np
 import pickle
 import os
 import time
+from logger import log
 
 
 def create_svd(svd_filename, data_with_user):
+    log('start', create_svd)
     train_data = data_with_user.sample(frac=0.8)
     val_data = data_with_user.drop(train_data.index.tolist()).sample(frac=0.5, random_state=8)
     test_data = data_with_user.drop(train_data.index.tolist()).drop(val_data.index.tolist())
@@ -25,9 +27,9 @@ def create_svd(svd_filename, data_with_user):
     pred = svd.predict(test_data)
     mae = mean_absolute_error(test_data["rating"], pred)
     rmse = np.sqrt(mean_squared_error(test_data["rating"], pred))
-    print("Test MAE:  {:.2f}".format(mae))
-    print("Test RMSE: {:.2f}".format(rmse))
-    print('{} factors, {} lr, {} reg'.format(factors, lr, reg))
+    log('Test MAE:  {:.2f}'.format(mae), create_svd)
+    log('Test RMSE: {:.2f}'.format(rmse), create_svd)
+    log('{} factors, {} lr, {} reg'.format(factors, lr, reg), create_svd)
 
     with open(svd_filename, 'wb') as f:
         pickle.dump(svd, f)
@@ -50,12 +52,12 @@ def create_or_load_data_with_user(variant, movies_df, data_with_user_filename):
 
 
 def create_or_load_dfs(variant, data_with_user, movies_df, data_with_user_filename):
-    now = time.time()
+    log('start', create_or_load_dfs)
     if movies_df is None:
         movies_df = create_or_load_movies_df(variant)
     if data_with_user is None:
         data_with_user = create_or_load_data_with_user(variant, movies_df, data_with_user_filename)
-    print('\n', time.time() - now)
+    log('finish', create_or_load_dfs)
     return data_with_user, movies_df
 
 
@@ -72,13 +74,13 @@ def create_data_with_user(df, movies_df, data_with_user_filename):
     # my_ratings[1210] = 5
     # my_ratings[2628] = 5
     # my_ratings[5378] = 5
-    # print('User ratings:')
-    # print('-----------------')
+    # log('User ratings:', create_data_with_user)
+    # log('-----------------', create_data_with_user)
     # for i, val in enumerate(my_ratings):
     #     if val > 0:
-    #         print('Rated %d stars: %s' %
-    #               (val, movies_df.loc[movies_df.i_id == i].title.values))
-    # print("Adding your recommendations!")
+    #         log('Rated %d stars: %s' %
+    #               (val, movies_df.loc[movies_df.i_id == i].title.values), create_data_with_user)
+    # log('Adding your recommendations!', create_data_with_user)
     # items_id = [item[0] for item in np.argwhere(my_ratings > 0)]
     # ratings_list = my_ratings[np.where(my_ratings > 0)]
     # user_id = np.asarray([0] * len(ratings_list))
@@ -93,7 +95,7 @@ def create_data_with_user(df, movies_df, data_with_user_filename):
     #
     # now = time.time()
     # data_with_user.to_pickle(data_with_user_filename)
-    # print('\n', time.time() - now)
+    # log(time.time() - now, create_data_with_user)
     my_ratings = {}
     my_ratings[920] = 5
     my_ratings[1721] = 5
@@ -110,7 +112,7 @@ def create_data_with_user(df, movies_df, data_with_user_filename):
     my_ratings[19] = 1
 
     for i, val in my_ratings.items():
-        print('Rated %d %d stars: %s' % (val, i, movies_df.loc[movies_df.i_id == i].title.values))
+        log('Rated %d %d stars: %s' % (val, i, movies_df.loc[movies_df.i_id == i].title.values), create_data_with_user)
 
     items_id = list(my_ratings.keys())
     ratings_list = list(my_ratings.values())
