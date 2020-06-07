@@ -12,9 +12,9 @@ def timer(text=''):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            log('start', (timer.__name__, func.__name__))
+            log('start', (timer, func))
             result = func(*args, **kwargs)
-            log('finish{}'.format(': {}'.format(text) if text is not '' else ''), (timer.__name__, func.__name__))
+            log('finish{}'.format(': {}'.format(text) if text is not '' else ''), (timer, func))
             return result
         return wrapper
     return decorator
