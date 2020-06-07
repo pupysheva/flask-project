@@ -107,7 +107,7 @@ class SVD():
         progress(0.01)
         self.early_stopping = None
         self.shuffle = None
-        log('Preprocessing data...', (SVD, self.fit))
+        log('Preprocessing data...', self.fit)
         Data = self._data_conversion(Data)
         progress(0.50)
 
@@ -171,4 +171,4 @@ class SVD():
             output += 'val_mae: {:.3f} - '.format(mean_abs_err)
 
         output += 'took {:.1f} seconds'.format(end - beginning_time)
-        log(output, (SVD, self._print_metrics))
+        log(output, self._print_metrics)
