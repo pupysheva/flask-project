@@ -91,13 +91,13 @@ def progress(thread_id):
 
 def train_model():
     def thf():
-        log('train_model.t started', thf)
+        log('train_model.t started', (train_model, thf))
         q = Queue()
         p = Process(target=module_for_retraining.train_model, args=(q, thread_id, from_pkl))
         p.start()
         global rec_alg
         rec_alg = q.get()
-        log('train_model: Updated.', thf)
+        log('train_model: Updated.', (train_model, thf))
     thread_id = random.randint(0, 100000)
     th = threading.Thread(target=thf, args=())
     th.start()
