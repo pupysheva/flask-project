@@ -63,6 +63,8 @@ def logline(message = '', methodmark = None):
     if settings['methodmark'] and methodmark is not None:
         def resolver(methodmark):
             if hasattr(methodmark, '__name__'):
+                if hasattr(methodmark, '__module__'):
+                    return '#'.join((methodmark.__module__, methodmark.__name__))
                 return methodmark.__name__
             elif isinstance(methodmark, Iterable):
                 meth = ()
