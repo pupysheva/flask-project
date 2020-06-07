@@ -8,6 +8,7 @@ import zipfile
 
 import numpy as np
 import pandas as pd
+from logger import log
 
 
 __all__ = [
@@ -61,27 +62,27 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
 
     if target_df == "ratings" and os.path.exists(csv_path_ratings):
         if not os.path.exists(pkl_path_ratings):
-            print('read csv...', csv_path_ratings)
+            log('read csv... {}'.format(csv_path_ratings), fetch_ml_ratings)
             df = ml_ratings_csv_to_df(csv_path_ratings, variant)
-            print('save csv.pkl...', pkl_path_ratings)
+            log('save csv.pkl... {}'.format(pkl_path_ratings), fetch_ml_ratings)
             df.to_pickle(pkl_path_ratings)
         else:
-            print('read csv.pkl...', pkl_path_ratings)
+            log('read csv.pkl... {}'.format(pkl_path_ratings), fetch_ml_ratings)
             df = pd.read_pickle(pkl_path_ratings)
         return df
     if target_df == "movies" and os.path.exists(csv_path_movies):
         if not os.path.exists(pkl_path_movies):
-            print('read csv...', csv_path_movies)
+            log('read csv... {}'.format(csv_path_movies), fetch_ml_ratings)
             df = ml_movies_csv_to_df(csv_path_movies, variant)
-            print('save csv.pkl...', pkl_path_movies)
+            log('save csv.pkl... {}'.format(pkl_path_movies), fetch_ml_ratings)
             df.to_pickle(pkl_path_movies)
         else:
-            print('read csv.pkl...', pkl_path_movies)
+            log('read csv.pkl... {}'.format(pkl_path_movies), fetch_ml_ratings)
             df = pd.read_pickle(pkl_path_movies)
         return df
 
     elif os.path.exists(zip_path):
-        print('Unzipping data...', zip_path)
+        log('Unzipping data...'.format(zip_path), fetch_ml_ratings)
 
         with zipfile.ZipFile(zip_path, 'r') as zf:
             zf.extractall(data_dir_path)
@@ -92,7 +93,7 @@ def fetch_ml_ratings(target_df, data_dir_path="./resources/", variant='20m'):
         return fetch_ml_ratings(variant=variant, target_df=target_df)
 
     else:
-        print('Downloading data from', url, 'to', zip_path)
+        log('Downloading data from {} to {}'.format(url, zip_path), fetch_ml_ratings)
         with urllib.request.urlopen(url) as r, open(zip_path, 'wb') as f:
             shutil.copyfileobj(r, f)
 
