@@ -61,15 +61,17 @@ def logline(message = '', methodmark = None):
     if settings['cpu']:
         results += ['CPU: {:>5.1f} %'.format(cpu_percent())]
     if settings['methodmark'] and methodmark is not None:
-        if hasattr(methodmark, '__name__'):
-            results += [methodmark.__name__]
-        elif isinstance(methodmark, Iterable):
-            meth = ()
-            for m in methodmark:
-                meth += (m.__name__,) if hasattr(m, '__name__') else str(m)
-            results += [str(meth)]
-        else:
-            results += [str(methodmark)]
+        def resolver(methodmark):
+            if hasattr(methodmark, '__name__'):
+                return methodmark.__name__
+            elif isinstance(methodmark, Iterable):
+                meth = ()
+                for m in methodmark:
+                    meth += (resolver(m),)
+                return meth
+            else:
+                return methodmark
+        results += [str(resolver(methodmark))]
     output = '; '.join(results)
     if message is not None and len(message) > 0:
         if len(output) > 0:
