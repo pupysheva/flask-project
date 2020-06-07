@@ -1,9 +1,7 @@
 #!/usr/bin/python
 # utf-8
-import time
-
+from logger import log
 from functools import wraps
-from math import trunc
 
 
 def timer(text=''):
@@ -14,18 +12,9 @@ def timer(text=''):
     def decorator(func):
         @wraps(func)
         def wrapper(*args, **kwargs):
-            start = time.time()
+            log('start', (timer.__name__, func.__name__))
             result = func(*args, **kwargs)
-            end = time.time()
-            hours = trunc((end - start) / 3600)
-            minutes = trunc((end - start) / 60)
-            seconds = round((end - start) % 60)
-            if hours >= 1:
-                print(text + '{} hours {} min and {} sec'.format(hours, minutes, seconds))
-            elif minutes >= 1:
-                print(text + '{} min and {} sec'.format(minutes, seconds))
-            else:
-                print(text + '{} sec'.format(seconds))
+            log('finish{}'.format(': {}'.format(text) if text is not '' else ''), (timer.__name__, func.__name__))
             return result
         return wrapper
     return decorator

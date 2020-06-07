@@ -94,7 +94,7 @@ class SVD():
         self.movie_deviations = movie_deviations
         progress(1)
 
-    @timer(text='\nTraining took ')
+    @timer('Training took.')
     def fit(self, Data, Data_val=None, progress=lambda p: None):
         """Обучение модели
         Аргументы:
