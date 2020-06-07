@@ -7,6 +7,7 @@ from .epochs import _calculation_valid_metrics
 from .epochs import _init_params
 from .epochs import _start_ep
 from .timer import timer
+from logger import log
 
 
 class SVD():
@@ -73,7 +74,7 @@ class SVD():
         n_item = len(np.unique(Data[:, 1]))
         user_embeddings, movie_embeddings, user_deviations, movie_deviations = _init_params(n_user, n_item, self.n_factors)
         for epoch_ix in range(self.n_epochs):
-            beginning_time = self._epoch_history(epoch_ix)
+            beginning_time = time.time()
             user_embeddings, movie_embeddings, user_deviations, movie_deviations = _start_ep(Data, user_embeddings, movie_embeddings, user_deviations, movie_deviations, self.global_mean,
                                         self.n_factors, self.lr, self.reg)
 
@@ -81,9 +82,9 @@ class SVD():
                 val_mse, val_rmse, val_mae = _calculation_valid_metrics(Data_val, user_embeddings, movie_embeddings, user_deviations, movie_deviations,
                                                        self.global_mean,
                                                        self.n_factors)
-                self._print_metrics(beginning_time, val_mse, val_rmse, val_mae)
+                self._print_metrics(epoch_ix, beginning_time, val_mse, val_rmse, val_mae)
             else:
-                self._print_metrics(beginning_time)
+                self._print_metrics(epoch_ix, beginning_time)
             progress(float(epoch_ix) / self.n_epochs)
             time.sleep(0.001)
 
@@ -106,7 +107,7 @@ class SVD():
         progress(0.01)
         self.early_stopping = None
         self.shuffle = None
-        print('Preprocessing data...\n')
+        log('Preprocessing data...', self.fit)
         Data = self._data_conversion(Data)
         progress(0.50)
 
@@ -159,20 +160,15 @@ class SVD():
         return forecasts
 
 
-    def _epoch_history(self, ep_ind):
-        beginning = time.time()
-        end = '  | ' if ep_ind < 9 else ' | '
-        print('Epoch {}/{}'.format(ep_ind + 1, self.n_epochs), end=end)
-        return beginning
-
-
-    def _print_metrics(self, beginning_time, mean_sqrt_error = None, root_mean_square_error = None, mean_abs_err = None):
+    def _print_metrics(self, epoch_ix, beginning_time, mean_sqrt_error = None, root_mean_square_error = None, mean_abs_err = None):
         end = time.time()
+        output = 'Epoch {:>2}/{:<2} | '.format(epoch_ix + 1, self.n_epochs)
         if mean_sqrt_error is not None:
-            print('val_mse: {:.3f}'.format(mean_sqrt_error), end=' - ')
+            output += 'val_mse: {:.3f} - '.format(mean_sqrt_error)
         if root_mean_square_error is not None:
-            print('val_rmse: {:.3f}'.format(root_mean_square_error), end=' - ')
+            output += 'val_rmse: {:.3f} - '.format(root_mean_square_error)
         if mean_abs_err is not None:
-            print('val_mae: {:.3f}'.format(mean_abs_err), end=' - ')
+            output += 'val_mae: {:.3f} - '.format(mean_abs_err)
 
-        print('took {:.1f} sec'.format(end - beginning_time))
+        output += 'took {:.1f} seconds'.format(end - beginning_time)
+        log(output, self._print_metrics)
